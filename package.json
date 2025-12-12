@@ -1,21 +1,29 @@
 {
   "name": "acocie_stores",
   "version": "1.0.0",
-  "main": "index.js",
+  "main": "server.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "node index.js",
-    "dev": "nodemon index.js",
-    "migrate":"sequelize-cli db:migrate",
-    "migrate:undo":"sequelize-cli db:migrate:undo",
-    "seed":"sequelize-cli db:seed:all"
+    "start": "node server.js",
+    "dev": "nodemon server.js",
+    "migrate": "sequelize-cli db:migrate",
+    "migrate:undo": "sequelize-cli db:migrate:undo",
+    "seed": "sequelize-cli db:seed:all"
   },
-  "keywords": ["ecommerce", "api", "express", "sequelize"],
+  "keywords": [
+    "ecommerce",
+    "api",
+    "express",
+    "sequelize"
+  ],
   "author": "Stephen Omondi",
   "license": "ISC",
   "description": "",
   "dependencies": {
-    "express": "^5.2.1"
+    "dotenv": "^17.2.3",
+    "express": "^5.2.1",
+    "helmet": "^8.1.0",
+    "morgan": "^1.10.1"
   },
   "devDependencies": {
     "nodemon": "^3.1.11"
