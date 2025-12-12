@@ -5,10 +5,13 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "start": "node index.js",
-    "dev": "nodemon index.js"
+    "dev": "nodemon index.js",
+    "migrate":"sequelize-cli db:migrate",
+    "migrate:undo":"sequelize-cli db:migrate:undo",
+    "seed":"sequelize-cli db:seed:all"
   },
-  "keywords": [],
-  "author": "",
+  "keywords": ["ecommerce", "api", "express", "sequelize"],
+  "author": "Stephen Omondi",
   "license": "ISC",
   "description": "",
   "dependencies": {
