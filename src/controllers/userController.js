@@ -78,19 +78,72 @@ const updateProfile = async (req,res) => {
     }
 };
 
-const getAddress = await (req,res) => {
+const getAddresses = async (req, res) => {
+  try {
+    const userId = req.user.userId;
+
+    const addresses = await Address.findAll({
+      where: { userId },
+      order: [['isDefault', 'DESC'], ['createdAt', 'DESC']]
+    });
+
+    res.json({ addresses });
+  } catch (error) {
+    console.error('Error in getAddresses:', error);
+    res.status(500).json({ error: 'Failed to fetch addresses' });
+  }
+};
+
+const addAddress = async (req,res) => {
     try{
         const userId = req.user.userId;
+        const {
+        label,
+        fullName,
+        phone,
+        addressLine1,
+        addressLine2,
+        city,
+        state,
+        postalCode,
+        country,
+        isDefault
+        } = req.body;
+    
+    if (!fullName || !phone || !addressLine1 || !city || !state || !postalCode) {
+      return res.status(400).json({ error: 'Required address fields are missing' });
+    }
 
-        const addresses = await Address.findAll({
-            where: { userId },
-            order: [['isDefault','DESC'], ['createdAt','DESC']]
-        });
+    if (isDefault) {
+      await Address.update(
+        { isDefault: false },
+        { where: { userId } }
+      );
+    }
 
-        res.json({addresses});
+    const address = await Address.create({
+      userId,
+      label,
+      fullName,
+      phone,
+      addressLine1,
+      addressLine2,
+      city,
+      state,
+      postalCode,
+      country: country || 'Kenya',
+      isDefault: isDefault || false
+    });
+
+    res.status(201).json({
+      message: 'Address added successfully',
+      address
+    });
+
+
     } catch (error){
-        console.error('Error in getAddresses:', error);
-        res.status(500).json({ error: 'Failed to fetch addresses' });
+        console.error('Error in addAddress:', error);
+        res.status(500).json({ error: 'Failed to add address' });
     }
 };
 
