@@ -180,3 +180,46 @@ const login = async (req,res) => {
         res.status(500).json({ error: 'Failed to log in' });
     }
 };
+
+const refreshToken = async (req,res) => {
+    try{
+        const { refreshToken: token } = req.body;
+
+        if(!token){
+            return res.status(400).json({error:'Refresh Token is required'});
+        }
+
+        const decoded = authUtils.verifyRefreshToken(token);
+        if(!decoded){
+            return res.status(401).json({error:'Invalid refresh token'});
+        }
+
+        const tokenRecord = await RefreshToken.findOne({
+            where:{
+                token,
+                expiresAt:{[Op.gt]: new Date()}
+            }
+        });
+
+        if(!tokenRecord){
+            return res.status(401).json({error:'Refresh token not found or expired'});
+        }
+
+        const user = await user.findByPk(decoded.userId);
+        if(!user || user.status == 'active'){
+            return res.status(401).json({error:'User not found or inactive'});
+        }
+
+        const accessToken = authUtils.generateAccessToken(user.id,user.email,user.role);
+
+        res.json({
+            message:'Token refreshed successfully',
+            accessToken
+        });
+    } catch(error){
+        console.error('Error in refreshToken:', error);
+        res.status(500).json({ error: 'Failed to refresh token' });
+    }
+};
+
+
