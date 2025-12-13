@@ -82,3 +82,16 @@ const getOTPExpiry = () => {
   return new Date(Date.now() + minutes * 60 * 1000);
 };
 
+module.exports = {
+  generateOTP,
+  hashPassword,
+  comparePassword,
+  generateAccessToken,
+  generateRefreshToken,
+  verifyAccessToken,
+  verifyRefreshToken,
+  getTokenExpiry,
+  isValidEmail,
+  isStrongPassword,
+  getOTPExpiry
+};
