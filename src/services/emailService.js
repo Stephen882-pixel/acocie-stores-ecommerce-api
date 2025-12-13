@@ -131,6 +131,10 @@ const sendWelcomeEmail = async(email,firstName) => {
   }
 };
 
-
+module.exports = {
+  sendSignUpOTP,
+  sendPasswordResetOTP,
+  sendWelcomeEmail
+};
 
 
