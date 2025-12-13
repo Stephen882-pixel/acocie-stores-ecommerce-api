@@ -398,4 +398,14 @@ const changePassword = async (req,res) => {
     }
 };
 
-
+module.exports = {
+  signup,
+  verifyOTP,
+  login,
+  refreshToken,
+  logout,
+  forgotPassword,
+  verifyResetOTP,
+  resetPassword,
+  changePassword
+};
