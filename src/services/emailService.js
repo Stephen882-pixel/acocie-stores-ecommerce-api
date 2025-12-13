@@ -49,4 +49,45 @@ const sendSignUpOTP = async (email, firstName, otpCode) => {
     }
 };
 
+const sendPasswordResetOTP = async (email, firstName, otpCode) => {
+    const mailOptions = {
+        rom: process.env.EMAIL_FROM,
+    to: email,
+    subject: 'Password Reset Request - Acocie Stores',
+    html: `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+        <div style="text-align: center; margin-bottom: 30px;">
+          <h1 style="color: #2563eb;">Acocie Stores</h1>
+        </div>
+        <h2 style="color: #333;">Password Reset Request</h2>
+        <p style="color: #666; font-size: 16px;">Hi ${firstName},</p>
+        <p style="color: #666; font-size: 16px;">We received a request to reset your password. Use the OTP code below to proceed:</p>
+        <div style="background-color: #f3f4f6; padding: 20px; text-align: center; border-radius: 8px; margin: 30px 0;">
+          <div style="font-size: 36px; font-weight: bold; letter-spacing: 8px; color: #2563eb;">
+            ${otpCode}
+          </div>
+        </div>
+        <p style="color: #666; font-size: 14px;">This code will expire in 10 minutes.</p>
+        <p style="color: #ef4444; font-size: 14px; font-weight: bold;">If you didn't request a password reset, please ignore this email and your password will remain unchanged.</p>
+        <hr style="margin: 40px 0; border: none; border-top: 1px solid #e5e7eb;">
+        <p style="color: #9ca3af; font-size: 12px; text-align: center;">
+          Acocie Stores - Your Trusted E-commerce Platform<br>
+          © ${new Date().getFullYear()} Acocie Stores. All rights reserved.
+        </p>
+      </div>
+    `
+    };
+
+    try{
+        await transporter.sendMail(mailOptions);
+        console.log(`✓ Password reset OTP sent to ${email}`);
+        return true;
+    } catch (error){
+        console.error('✗ Error sending password reset OTP:', error.message);
+        throw new Error('Failed to send password reset email');
+    }
+};
+
+
+
 
