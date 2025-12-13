@@ -88,6 +88,49 @@ const sendPasswordResetOTP = async (email, firstName, otpCode) => {
     }
 };
 
+const sendWelcomeEmail = async(email,firstName) => {
+    const mailOptions = {
+    from: process.env.EMAIL_FROM,
+    to: email,
+    subject: 'Welcome to Acocie Stores!',
+    html: `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+        <div style="text-align: center; margin-bottom: 30px;">
+          <h1 style="color: #2563eb;">Acocie Stores</h1>
+        </div>
+        <h2 style="color: #333;">Welcome to Acocie Stores, ${firstName}! 🎉</h2>
+        <p style="color: #666; font-size: 16px;">Your account has been successfully verified. You can now enjoy shopping with us!</p>
+        <div style="background-color: #f3f4f6; padding: 20px; border-radius: 8px; margin: 30px 0;">
+          <h3 style="color: #2563eb; margin-top: 0;">What's Next?</h3>
+          <ul style="color: #666;">
+            <li>Browse our extensive product catalog</li>
+            <li>Add items to your wishlist</li>
+            <li>Enjoy secure checkout</li>
+            <li>Track your orders in real-time</li>
+          </ul>
+        </div>
+        <div style="text-align: center; margin: 30px 0;">
+          <a href="${process.env.FRONTEND_URL}" style="background-color: #2563eb; color: white; padding: 12px 30px; text-decoration: none; border-radius: 6px; display: inline-block;">Start Shopping</a>
+        </div>
+        <hr style="margin: 40px 0; border: none; border-top: 1px solid #e5e7eb;">
+        <p style="color: #9ca3af; font-size: 12px; text-align: center;">
+          Acocie Stores - Your Trusted E-commerce Platform<br>
+          © ${new Date().getFullYear()} Acocie Stores. All rights reserved.
+        </p>
+      </div>
+    `
+  };
+
+  try{
+    await transporter.sendMail(mailOptions);
+    console.log(`✓ Welcome email sent to ${email}`);
+    return true;
+  } catch (error){
+    console.error('✗ Error sending welcome email:', error.message);
+    return false;
+  }
+};
+
 
 
 
