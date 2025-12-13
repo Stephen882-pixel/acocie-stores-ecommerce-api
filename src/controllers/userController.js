@@ -30,3 +30,51 @@ const getProfile = async (req,res) => {
 };
 
 
+
+const updateProfile = async (req,res) => {
+    try{
+        const userId = req.user.userId;
+        const { firstName, lastName, phone } = req.body;
+
+        const user = await user.findByPk(userId);
+
+        if(!user){
+            return res.status(404).json({error:'User not found'});
+        }
+
+        if(phone && phone !== user.phone){
+            const existingPhone = await user.findOne({
+                where: {
+                    phone,
+                    id:{[Op.ne]:userId}
+                }
+            });
+
+            if(existingPhone){
+                return res.status(409).json({
+                    'Phone already in use'
+                });
+            }
+        }
+         
+        await user.update({
+            message:'Profile updated successfully',
+            user:{
+                id:user.id,
+                firstName:user.firstName,
+                lastName:user.lastName,
+                email:user.email,
+                phone:user.phone,
+                role:user.role,
+                isVerified:user.isVerified
+            }
+        });
+    } catch (error){
+        console.error('Error in update profile:',error);
+        res.status(500).json({
+            error:
+            'Failed to update profile'
+        });
+    }
+};
+
