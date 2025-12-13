@@ -375,7 +375,7 @@ const changePassword = async (req,res) => {
         });
         }
 
-        const user = await User.findByPk(userId);
+        const user = await user.findByPk(userId);
 
         if (!user) {
         return res.status(404).json({ error: 'User not found' });
