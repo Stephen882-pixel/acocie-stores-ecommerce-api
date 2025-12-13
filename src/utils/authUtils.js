@@ -76,3 +76,9 @@ const isStrongPassword = (password) => {
   const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$/;
   return passwordRegex.test(password);
 };
+
+const getOTPExpiry = () => {
+  const minutes = parseInt(process.env.OTP_EXPIRY_MINUTES) || 10;
+  return new Date(Date.now() + minutes * 60 * 1000);
+};
+
