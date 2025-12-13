@@ -223,3 +223,17 @@ const refreshToken = async (req,res) => {
 };
 
 
+const logout = async (req,res) => {
+    try{
+        const { refreshToken: token } = req.body;
+
+        if(token){
+            await RefreshToken.destroy({where: { token }});
+        }
+
+        res.json({message:'Logged out successfully'});
+    } catch (error){
+        console.error('Error in logout:', error);
+        res.status(500).json({ error: 'Failed to log out' });
+    }
+};
