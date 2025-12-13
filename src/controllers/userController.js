@@ -52,7 +52,7 @@ const updateProfile = async (req,res) => {
 
             if(existingPhone){
                 return res.status(409).json({
-                    'Phone already in use'
+                   error: 'Phone already in use'
                 });
             }
         }
@@ -77,4 +77,21 @@ const updateProfile = async (req,res) => {
         });
     }
 };
+
+const getAddress = await (req,res) => {
+    try{
+        const userId = req.user.userId;
+
+        const addresses = await Address.findAll({
+            where: { userId },
+            order: [['isDefault','DESC'], ['createdAt','DESC']]
+        });
+
+        res.json({addresses});
+    } catch (error){
+        console.error('Error in getAddresses:', error);
+        res.status(500).json({ error: 'Failed to fetch addresses' });
+    }
+};
+
 
