@@ -270,4 +270,89 @@ const forgotPassword = async (req,res) => {
     }
 };
 
+const verifyResetOTP = async (req,res) => {
+    try{
+        const { email,otpCode } = req.body;
+
+        if(!email || !otpCode){
+            return res.status(400).json({
+                error:'Email and OTP Code are required'
+            });
+        }
+
+        const otp = await OTPCode.findOne({
+            where: {
+                email,
+                otpCode,
+                purpose:'password_reset',
+                isUsed:false,
+                expiresAt:{ [Op.gt]: new Date() }
+            },
+            order:[[ 'createdAt','DESC' ]]
+        });
+
+        if(!otp){
+            return res.status(400).json({
+                error:'Invalid or expired otp code',
+            })
+        }
+
+        await otp.update({ isUsed: true });
+
+        res.json({
+            message:'OTP Verified.You can now reset your password.',
+            email
+        });
+    } catch (error){
+        console.error('Error in verifyResetOTP:', error);
+        res.status(500).json({ error: 'Failed to verify OTP' });
+    }
+};
+
+const  resetPassword = async (req,res) => {
+    try{
+        const { email,newPassword,confirmPassword } = req.body;
+
+        if(!email || !newPassword || !confirmPassword){
+            return res.json(400).json({
+                error:'All fields are required'
+            });
+        }
+
+        if(newPassword !== confirmPassword){
+            return res.status(400).json({
+                error:'Passwords do not match'
+            });
+        }
+
+        if(!authUtils.isStrongPassword(newPassword)){
+            return res.status(400).json({
+                error:'Passwords must be atleast 8 characters with uppercase, lowercase, and number'
+            });
+        }
+
+        const user = await user.findOne({ where: { email } });
+
+        if(!user){
+            return res.status(404).json({
+                error:'User not found'
+            });
+        }
+
+        const newPasswordHash = await authUtils.hashPassword(newPassword);
+        await user.update({ passwordHash: newPasswordHash });
+        await RefreshToken.destroy({
+            where: {
+                userId:user.id
+            } 
+        });
+
+        res.json({message:'Password reset successfully. Please login with your new password.'});
+    } catch (error){
+        console.error('Error in resetPassword:', error);
+        res.status(500).json({ error: 'Failed to reset password' });
+    }
+};
+
+
 
