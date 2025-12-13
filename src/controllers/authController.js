@@ -4,6 +4,7 @@ const { user, OTPCode, RefreshToken, LoginHistory } = require('../models');
 const authUtils = require('../utils/authUtils');
 const emailService = require('../services/emailService');
 const { Op } = require('sequelize');
+const e = require('express');
 
 const signup = async (req,res) => {
     try{
@@ -62,3 +63,42 @@ const signup = async (req,res) => {
         res.status(500).json({ error: 'Failed to create account' });
     }
 };
+
+const verifyOTP = async (req,res) => {
+    try{
+        const { email,otpCode } = req.body;
+
+        if(!email || !otpCode){
+            return res.status(400).json({error: 'Email and OTP Code are required'});
+        }
+
+        const otp = await OTPCode.findOne({
+            where: {
+                email,
+                otpCode,
+                purpose:'signup',
+                isUsed:false,
+                expiresAt:{ [Op.gt]: new Date() }
+            },
+            order: [['createdAt','DESC']]
+        });
+
+        if(!otp){
+            return res.status(400).json({error: 'Invalid or expired OTP code'});
+        }
+
+        await otp.update({ isUsed:true });
+        await user.update({ isVerified:true },{ where: { email } });
+
+        const user = await user.findOne({ where: {email} });
+        await emailService.sendWelcomeEmail(email,user.firstName);
+
+        res.json({
+            message: 'Email verified successfully! You can now log in.'
+        });
+    } catch (error){
+        console.error('Error in verifyOTP:', error);
+        res.status(500).json({ error: 'Failed to verify OTP' });
+    }
+};
+
