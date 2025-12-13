@@ -102,3 +102,81 @@ const verifyOTP = async (req,res) => {
     }
 };
 
+const login = async (req,res) => {
+    try{
+        const { email, password } = req.body;
+
+        if(!email || !password){
+            return res.status(400).json({error:'Email and password are required'});
+        }
+
+        const user = await user.findOne({where: { email }});
+
+        if(!user){
+            await LoginHistory.create({
+                userId: null,
+                ipAddress:req.ip,
+                userAgent:req.get('user-agent'),
+                status:'failed'
+            });
+            return res.status(401).json({error: 'Invalid email or password'});
+        }
+
+        if(!user.isVerified){
+            return res.status(403).json({
+                error: 'Please verify your email first',
+                needsVerification:true
+            });
+        }
+
+        const isPasswordValid = await authUtils.comparePassword(password,user.passwordHash);
+
+
+        if(!isPasswordValid){
+            await LoginHistory.create({
+                userId:user.id,
+                ipAddress:req.ip,
+                userAgent:req.get('user-agent'),
+                status:'failed'
+            });
+            return res.status(401).json({error:'Invalid email or password'});
+        }
+
+        const accessToken = authUtils.generateAccessToken(user.id,user.email,user.role);
+        const refreshToken = authUtils.generateRefreshToken(user.id,user.email);
+
+
+        const refreshExpiry = authUtils.getTokenExpiry(process.env.JWT_REFRESH_EXPIRY || '7d');
+        await RefreshToken.create({
+            userId: user.id,
+            token: refreshToken,
+            expiresAt: refreshExpiry
+        });
+
+        await user.update({ lastLoginAt: new Date() });
+
+        await LoginHistory.create({
+            userId: user.id,
+            ipAddress: req.ip,
+            userAgent: req.get('user-agent'),
+            status: 'success' 
+        });
+
+        res.json({
+      message: 'Login successful',
+      accessToken,
+      refreshToken,
+      user: {
+        id: user.id,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        email: user.email,
+        role: user.role,
+        isVerified: user.isVerified
+      }
+    });
+    } catch (error){
+        console.error('Error in login:', error);
+        res.status(500).json({ error: 'Failed to log in' });
+    }
+};
