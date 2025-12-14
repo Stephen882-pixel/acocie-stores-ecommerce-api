@@ -180,3 +180,57 @@ const deleteUser = async (req,res) => {
     }
 };
 
+const getDashboardStats = async (req,res) => {
+    try{
+        const totalUsers = await user.count();
+
+        const usersByRole = await user.findAll({
+            attributes: [
+                'role',
+                [user.sequelize.fn('COUNT', User.sequelize.col('id')), 'count']
+            ],
+            group: ['role']
+        });
+
+        const usersByStatus = await User.findAll({
+        attributes: [
+            'status',
+            [user.sequelize.fn('COUNT', User.sequelize.col('id')), 'count']
+        ],
+        group: ['status']
+        });
+
+        const startOfMonth = new Date();
+        startOfMonth.setDate(1);
+        startOfMonth.setHours(0, 0, 0, 0);
+
+        const newUsersThisMonth = await User.count({
+        where: {
+            createdAt: { [Op.gte]: startOfMonth }
+        }
+        });
+
+        const verifiedCount = await user.count({ where: { isVerified: true } });
+        const unverifiedCount = await user.count({ where: { isVerified: false } });
+
+        res.json({
+        totalUsers,
+        newUsersThisMonth,
+        usersByRole: usersByRole.map(r => ({
+            role: r.role,
+            count: parseInt(r.get('count'))
+        })),
+        usersByStatus: usersByStatus.map(s => ({
+            status: s.status,
+            count: parseInt(s.get('count'))
+        })),
+        verification: {
+            verified: verifiedCount,
+            unverified: unverifiedCount
+        }
+        });
+    }catch (error){
+
+    }
+};
+
