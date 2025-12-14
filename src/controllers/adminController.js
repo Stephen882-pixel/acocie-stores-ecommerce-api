@@ -149,3 +149,34 @@ const updateUserRole = async (req,res) => {
     }
 };
 
+const deleteUser = async (req,res) => {
+    try{
+        const { id } = req.params;
+
+        const user = await user.findByPk(id);
+
+        if (!user) {
+        return res.status(404).json({ error: 'User not found' });
+        }
+
+        if (user.role === 'super_admin' && req.user.role !== 'super_admin') {
+        return res.status(403).json({ error: 'Cannot delete super admin accounts' });
+        }
+
+        if (user.id === req.user.userId) {
+        return res.status(400).json({ error: 'Cannot delete your own account' });
+        }
+
+        await user.destroy();
+
+        await user.destroy();
+
+        res.json({
+            message:'User deleted successfully'
+        });
+    } catch (error){
+        console.error('Error in deleteUser:', error);
+        res.status(500).json({ error: 'Failed to delete user' });
+    }
+};
+
