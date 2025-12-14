@@ -147,4 +147,43 @@ const addAddress = async (req,res) => {
     }
 };
 
+const updateAdderess = async (req,res) => {
+    try{
+        const userId = req.user.userId;
+        const { id } = req.params;
+        const updateData = req.body;
+
+        const address = await Address.findOne({
+            where: { id,userId }
+        });
+
+        if(!address){
+            return res.status(404).json({
+                error:'Address not found'
+            });
+        }
+
+        if(updateData.isDefault){
+            await Address.update(
+                { isDefault: false },
+                { where: { userId,id: {[Op.ne]: id} } }
+            );
+        }
+        await address.update(updateData);
+
+        res.json({
+            message: 'Address updated successfully',
+            address
+        });
+    } catch (error){
+        console.error('Error in update address:', error);
+        res.status(500).json({
+            error:'Failed to update address'
+        });
+    }
+};
+
+
+
+
 
