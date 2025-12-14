@@ -69,3 +69,41 @@ const getUserById = async (req,res) => {
     }
 };
 
+
+const updateUserStatus = async (req,res) => {
+    try{
+        const { id } = req.params;
+        const { status } = req.body;
+
+        if (!['active', 'suspended', 'banned'].includes(status)) {
+        return res.status(400).json({ error: 'Invalid status value' });
+        }
+
+        const user = await user.findByPk(id);
+
+        if (!user) {
+        return res.status(404).json({ error: 'User not found' });
+        }
+
+        if (user.role === 'super_admin' && req.user.role !== 'super_admin') {
+        return res.status(403).json({ error: 'Cannot modify super admin accounts' });
+        }
+
+        await user.update({ status });
+
+        res.json({
+            message:`User status updated to ${status}`,
+            user:{
+                id:user.id,
+                email:user.email,
+                status:user.status
+            }
+        });
+
+    } catch (error){
+        console.log('Error in UpdateUserStatus:',error);
+        res.status(500).json({
+            error:'Failed to update user status'
+        });
+    }
+};
