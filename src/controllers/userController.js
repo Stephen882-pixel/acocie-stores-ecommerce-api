@@ -147,7 +147,7 @@ const addAddress = async (req,res) => {
     }
 };
 
-const updateAdderess = async (req,res) => {
+const updateAddress = async (req,res) => {
     try{
         const userId = req.user.userId;
         const { id } = req.params;
@@ -233,4 +233,14 @@ const deleteAccount = async (req, res) => {
   }
 };
 
+module.exports = {
+  getProfile,
+  updateProfile,
+  getAddresses,
+  addAddress,
+  updateAddress,
+  deleteAddress,
+  getLoginHistory,
+  deleteAccount
+};
 
