@@ -183,6 +183,24 @@ const updateAdderess = async (req,res) => {
     }
 };
 
+const getLoginHistory = async (req, res) => {
+  try {
+    const userId = req.user.userId;
+    const limit = parseInt(req.query.limit) || 10;
+
+    const history = await LoginHistory.findAll({
+      where: { userId },
+      order: [['loginAt', 'DESC']],
+      limit
+    });
+
+    res.json({ history });
+  } catch (error) {
+    console.error('Error in getLoginHistory:', error);
+    res.status(500).json({ error: 'Failed to fetch login history' });
+  }
+};
+
 
 const deleteAccount = async (req, res) => {
   try {
