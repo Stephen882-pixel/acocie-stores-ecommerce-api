@@ -107,3 +107,45 @@ const updateUserStatus = async (req,res) => {
         });
     }
 };
+
+const updateUserRole = async (req,res) => {
+    try{
+        const { id } =  req.params;
+        const { role } =  req.body;
+
+        if (!['customer', 'vendor', 'admin', 'super_admin'].includes(role)) {
+        return res.status(400).json({ error: 'Invalid role value' });
+        }
+
+        if (role === 'super_admin' && req.user.role !== 'super_admin') {
+        return res.status(403).json({ error: 'Only super admin can assign super admin role' });
+        }
+
+        const user = await User.findByPk(id);
+
+        if (!user) {
+        return res.status(404).json({ error: 'User not found' });
+        }
+
+        if (user.role === 'super_admin' && req.user.role !== 'super_admin') {
+        return res.status(403).json({ error: 'Cannot modify super admin accounts' });
+        }
+
+        await user.update({ role });
+        res.json({
+            message:`User role updated to ${role}`,
+            user:{
+                id:user.id,
+                email:user.email,
+                role:user.role
+            }
+        });
+
+    }catch(error){
+        console.error('Error in update user role:',error);
+        res.status(500).json({
+            error:'Failed to update user role'
+        });
+    }
+};
+
