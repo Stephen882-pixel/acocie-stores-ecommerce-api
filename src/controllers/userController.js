@@ -184,6 +184,35 @@ const updateAdderess = async (req,res) => {
 };
 
 
+const deleteAccount = async (req, res) => {
+  try {
+    const userId = req.user.userId;
+    const { password } = req.body;
 
+    if (!password) {
+      return res.status(400).json({ error: 'Password is required to delete account' });
+    }
+
+    const user = await user.findByPk(userId);
+
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    const authUtils = require('../utils/authUtils');
+    const isPasswordValid = await authUtils.comparePassword(password, user.passwordHash);
+
+    if (!isPasswordValid) {
+      return res.status(401).json({ error: 'Incorrect password' });
+    }
+
+    await user.destroy();
+
+    res.json({ message: 'Account deleted successfully' });
+  } catch (error) {
+    console.error('Error in deleteAccount:', error);
+    res.status(500).json({ error: 'Failed to delete account' });
+  }
+};
 
 
