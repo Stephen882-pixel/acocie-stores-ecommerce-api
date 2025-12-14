@@ -50,3 +50,17 @@ const authorizeMinRole =  (minRole) => {
     };
 };
 
+const isAdmin = authorize('admin', 'super_admin');
+
+
+const isSuperAdmin = authorize('super_admin');
+
+const isVendorOrAdmin = authorize('vendor', 'admin', 'super_admin');
+
+module.exports = {
+  authorize,
+  authorizeMinRole,
+  isAdmin,
+  isSuperAdmin,
+  isVendorOrAdmin
+};
