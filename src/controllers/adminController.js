@@ -192,10 +192,10 @@ const getDashboardStats = async (req,res) => {
             group: ['role']
         });
 
-        const usersByStatus = await User.findAll({
+        const usersByStatus = await user.findAll({
         attributes: [
             'status',
-            [user.sequelize.fn('COUNT', User.sequelize.col('id')), 'count']
+            [user.sequelize.fn('COUNT', user.sequelize.col('id')), 'count']
         ],
         group: ['status']
         });
@@ -204,7 +204,7 @@ const getDashboardStats = async (req,res) => {
         startOfMonth.setDate(1);
         startOfMonth.setHours(0, 0, 0, 0);
 
-        const newUsersThisMonth = await User.count({
+        const newUsersThisMonth = await user.count({
         where: {
             createdAt: { [Op.gte]: startOfMonth }
         }
@@ -230,7 +230,19 @@ const getDashboardStats = async (req,res) => {
         }
         });
     }catch (error){
-
+        console.error('Error in getDashboardStats:', error);
+        res.status(500).json({ error: 'Failed to fetch dashboard stats' });
     }
 };
+
+module.exports = {
+  getAllUsers,
+  getUserById,
+  updateUserStatus,
+  updateUserRole,
+  deleteUser,
+  getDashboardStats
+};
+
+
 
