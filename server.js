@@ -6,7 +6,7 @@ const morgan = require('morgan');
 require('dotenv').config();
 
 const { sequelize, testConnection } = require('./src/config/database');
-const authRoles = require('./src/routes/authRoutes');
+const authRoutes = require('./src/routes/authRoutes');
 const userRoutes = require('./src/routes/userRoutes');
 const adminRoutes = require('./src/routes/adminRoutes');
 

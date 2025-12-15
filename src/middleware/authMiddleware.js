@@ -1,8 +1,8 @@
 
 const authUtils = require('../utils/authUtils');
-const { user } = require('../models');
+const { User } = require('../models');
 
-const authenticate = async (req,res) => {
+const authenticate = async (req,res,next) => {
     try{
         const authHeader = req.headers?.authorization;
 
@@ -20,7 +20,7 @@ const authenticate = async (req,res) => {
                 error: 'Invalid or expired token'
             });
         }
-        const user = await user.findByPk(decoded.userId);
+        const user = await User.findByPk(decoded.userId);
 
         if(!user){
             return res.status(401).json({

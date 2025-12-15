@@ -1,9 +1,10 @@
 
 
-const { user, OTPCode, RefreshToken, LoginHistory } = require('../models');
+const { User, OTPCode, RefreshToken, LoginHistory } = require('../models');
 const authUtils = require('../utils/authUtils');
 const emailService = require('../services/emailService');
 const { Op } = require('sequelize');
+const { sequelize } = require('../config/database'); 
 const e = require('express');
 
 const signup = async (req,res) => {
@@ -33,7 +34,7 @@ const signup = async (req,res) => {
     const passwordHash = await authUtils.hashPassword(password);
     const userRole = role === 'vendor' ? 'vendor': 'customer';
 
-    const user = await user.create({
+    const user = await User.create({
       firstName,
       lastName,
       email,
@@ -56,7 +57,8 @@ const signup = async (req,res) => {
     res.status(201).json({
         message:'Signup successful! Please check your email for OTP verification.',
         email,
-        userId:user.id
+        userId:user.id,
+        userRole:user.role
     });
     } catch (error){
         console.error('Error in signup:', error);
@@ -64,42 +66,61 @@ const signup = async (req,res) => {
     }
 };
 
-const verifyOTP = async (req,res) => {
-    try{
-        const { email,otpCode } = req.body;
 
-        if(!email || !otpCode){
-            return res.status(400).json({error: 'Email and OTP Code are required'});
-        }
+const verifyOTP = async (req, res) => {
+  const transaction = await sequelize.transaction();
 
-        const otp = await OTPCode.findOne({
-            where: {
-                email,
-                otpCode,
-                purpose:'signup',
-                isUsed:false,
-                expiresAt:{ [Op.gt]: new Date() }
-            },
-            order: [['createdAt','DESC']]
-        });
+  try {
+    const { email, otpCode } = req.body;
 
-        if(!otp){
-            return res.status(400).json({error: 'Invalid or expired OTP code'});
-        }
-
-        await otp.update({ isUsed:true });
-        await user.update({ isVerified:true },{ where: { email } });
-
-        const user = await user.findOne({ where: {email} });
-        await emailService.sendWelcomeEmail(email,user.firstName);
-
-        res.json({
-            message: 'Email verified successfully! You can now log in.'
-        });
-    } catch (error){
-        console.error('Error in verifyOTP:', error);
-        res.status(500).json({ error: 'Failed to verify OTP' });
+    if (!email || !otpCode) {
+      return res.status(400).json({ error: 'Email and OTP Code are required' });
     }
+
+    const otp = await OTPCode.findOne({
+      where: {
+        email,
+        otpCode,
+        purpose: 'signup',
+        isUsed: false,
+        expiresAt: { [Op.gt]: new Date() }
+      },
+      order: [['created_at', 'DESC']], 
+      transaction
+    });
+
+    if (!otp) {
+      await transaction.rollback();
+      return res.status(400).json({ error: 'Invalid or expired OTP code' });
+    }
+
+    const user = await User.findOne({
+      where: { email },
+      transaction
+    });
+
+    if (!user) {
+      await transaction.rollback();
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    await otp.update({ isUsed: true }, { transaction });
+    await user.update({ isVerified: true }, { transaction });
+
+    await transaction.commit();
+
+    
+    await emailService.sendWelcomeEmail(email, user.firstName);
+
+    res.json({
+      message: 'Email verified successfully! You can now log in.'
+    });
+
+  } catch (error) {
+    await transaction.rollback();
+    console.error('Error in verifyOTP:', error);
+    res.status(500).json({ error: 'Failed to verify OTP' });
+  }
 };
 
 const login = async (req,res) => {
@@ -110,7 +131,7 @@ const login = async (req,res) => {
             return res.status(400).json({error:'Email and password are required'});
         }
 
-        const user = await user.findOne({where: { email }});
+        const user = await User.findOne({where: { email }});
 
         if(!user){
             await LoginHistory.create({
@@ -205,7 +226,7 @@ const refreshToken = async (req,res) => {
             return res.status(401).json({error:'Refresh token not found or expired'});
         }
 
-        const user = await user.findByPk(decoded.userId);
+        const user = await User.findByPk(decoded.userId);
         if(!user || user.status == 'active'){
             return res.status(401).json({error:'User not found or inactive'});
         }
@@ -246,7 +267,7 @@ const forgotPassword = async (req,res) => {
             return res.status(400).json({error:'Email is rerquired'});
         }
 
-        const user = await user.findOne({where: {email}});
+        const user = await User.findOne({where: {email}});
 
         if(!user){
             return res.json({message:'If email exists,OTP has been sent'});
@@ -331,7 +352,7 @@ const  resetPassword = async (req,res) => {
             });
         }
 
-        const user = await user.findOne({ where: { email } });
+        const user = await User.findOne({ where: { email } });
 
         if(!user){
             return res.status(404).json({
@@ -375,7 +396,7 @@ const changePassword = async (req,res) => {
         });
         }
 
-        const user = await user.findByPk(userId);
+        const user = await User.findByPk(userId);
 
         if (!user) {
         return res.status(404).json({ error: 'User not found' });

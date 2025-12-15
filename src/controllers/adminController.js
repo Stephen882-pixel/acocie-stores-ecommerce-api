@@ -1,6 +1,6 @@
 
 
-const { user,LoginHistory } = require('../models');
+const { User,LoginHistory } = require('../models');
 const { Op } = require('sequelize');
 
 
@@ -42,7 +42,7 @@ const getUserById = async (req,res) => {
     try{
         const { id } = req.params;
 
-        const user = await user.findByPk(id,{
+        const user = await User.findByPk(id,{
             attributes: { exclude: ['passwordHash'] },
             include: [
                 {
@@ -79,7 +79,7 @@ const updateUserStatus = async (req,res) => {
         return res.status(400).json({ error: 'Invalid status value' });
         }
 
-        const user = await user.findByPk(id);
+        const user = await User.findByPk(id);
 
         if (!user) {
         return res.status(404).json({ error: 'User not found' });
@@ -153,7 +153,7 @@ const deleteUser = async (req,res) => {
     try{
         const { id } = req.params;
 
-        const user = await user.findByPk(id);
+        const user = await User.findByPk(id);
 
         if (!user) {
         return res.status(404).json({ error: 'User not found' });
@@ -182,20 +182,20 @@ const deleteUser = async (req,res) => {
 
 const getDashboardStats = async (req,res) => {
     try{
-        const totalUsers = await user.count();
+        const totalUsers = await User.count();
 
-        const usersByRole = await user.findAll({
+        const usersByRole = await User.findAll({
             attributes: [
                 'role',
-                [user.sequelize.fn('COUNT', User.sequelize.col('id')), 'count']
+                [User.sequelize.fn('COUNT', User.sequelize.col('id')), 'count']
             ],
             group: ['role']
         });
 
-        const usersByStatus = await user.findAll({
+        const usersByStatus = await User.findAll({
         attributes: [
             'status',
-            [user.sequelize.fn('COUNT', user.sequelize.col('id')), 'count']
+            [User.sequelize.fn('COUNT', User.sequelize.col('id')), 'count']
         ],
         group: ['status']
         });
@@ -204,14 +204,14 @@ const getDashboardStats = async (req,res) => {
         startOfMonth.setDate(1);
         startOfMonth.setHours(0, 0, 0, 0);
 
-        const newUsersThisMonth = await user.count({
+        const newUsersThisMonth = await User.count({
         where: {
             createdAt: { [Op.gte]: startOfMonth }
         }
         });
 
-        const verifiedCount = await user.count({ where: { isVerified: true } });
-        const unverifiedCount = await user.count({ where: { isVerified: false } });
+        const verifiedCount = await User.count({ where: { isVerified: true } });
+        const unverifiedCount = await User.count({ where: { isVerified: false } });
 
         res.json({
         totalUsers,

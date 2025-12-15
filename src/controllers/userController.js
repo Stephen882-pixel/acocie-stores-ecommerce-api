@@ -1,13 +1,13 @@
 
 
-const { user, Address, LoginHistory } = require('../models');
+const { User, Address, LoginHistory } = require('../models');
 const { Op } = require('sequelize');
 
 const getProfile = async (req,res) => {
     try{
         const userId = req.user.userId;
 
-        const user = await user.findByPk(userId,{
+        const user = await User.findByPk(userId,{
             attributes: { exclude: ['passwordHash'] },
             include:[
                 {
@@ -183,6 +183,28 @@ const updateAddress = async (req,res) => {
     }
 };
 
+const deleteAddress = async (req, res) => {
+  try {
+    const userId = req.user.userId;
+    const { id } = req.params;
+
+    const address = await Address.findOne({
+      where: { id, userId }
+    });
+
+    if (!address) {
+      return res.status(404).json({ error: 'Address not found' });
+    }
+
+    await address.destroy();
+
+    res.json({ message: 'Address deleted successfully' });
+  } catch (error) {
+    console.error('Error in deleteAddress:', error);
+    res.status(500).json({ error: 'Failed to delete address' });
+  }
+};
+
 const getLoginHistory = async (req, res) => {
   try {
     const userId = req.user.userId;
@@ -211,7 +233,7 @@ const deleteAccount = async (req, res) => {
       return res.status(400).json({ error: 'Password is required to delete account' });
     }
 
-    const user = await user.findByPk(userId);
+    const user = await User.findByPk(userId);
 
     if (!user) {
       return res.status(404).json({ error: 'User not found' });
