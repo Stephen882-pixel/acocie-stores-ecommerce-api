@@ -7,11 +7,21 @@ const RefreshTokenModel = require('./RefreshToken');
 const AddressModel = require('./Address');
 const LoginHistoryModel = require('./LoginHistory');
 
+
+const CategoryModel = require('./Category');
+const ProductModel = require('./Product');
+const ProductImageModel = require('./ProductImage');
+const ProductVariantModel = require('./ProductVariant');
+const InventoryModel = require('./Inventory');
+
 const User = UserModel(sequelize);
 const OTPCode = OTPCodeModel(sequelize);
 const RefreshToken = RefreshTokenModel(sequelize);
 const Address = AddressModel(sequelize);
 const LoginHistory = LoginHistoryModel(sequelize);
+
+
+
 
 
 const models = {
