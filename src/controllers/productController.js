@@ -1,4 +1,5 @@
 
+const models = require('../models');
 const { Product, Category, ProductImage, ProductVariant, Inventory, User } = require('../models');
 const { Op, or } = require('sequelize');
 
@@ -85,4 +86,60 @@ const getAllProducts = async (req,res) => {
         console.error('Error in getAllProducts:', error);
         res.status(500).json({error:'Failed to fetch products'});
     }
-}
+};
+
+const getProductById = async (req,res) => {
+    try{
+        const { id } = req.params;
+
+        const product = await Product.findOne({
+        where: { 
+            id,
+            ...(req.user?.role === 'admin' || req.user?.role === 'super_admin' 
+            ? {} 
+            : { status: 'active' })
+        },
+            include: [
+                {
+                model: Category,
+                as: 'category',
+                attributes: ['id', 'name', 'slug']
+                },
+                {
+                model: ProductImage,
+                as: 'images',
+                order: [['displayOrder', 'ASC']]
+                },
+                {
+                model: ProductVariant,
+                as: 'variants',
+                where: { isActive: true },
+                required: false
+                },
+                {
+                model: Inventory,
+                as: 'inventory'
+                },
+                {
+                model: User,
+                as: 'vendor',
+                attributes: ['id', 'firstName', 'lastName', 'email', 'role']
+                }
+            ]
+        });
+
+        if(!product){
+            return res.status(404).json({
+                error:'Product not found'
+            });
+        }
+
+        await product.increment('viewCount');
+
+        res.json({ product });
+    }catch(error){
+        console.error('Error in getProductById:', error);
+        res.status(500).json({ error: 'Failed to fetch product' });
+    }
+};
+
