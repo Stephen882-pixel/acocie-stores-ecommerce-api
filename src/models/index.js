@@ -20,6 +20,11 @@ const RefreshToken = RefreshTokenModel(sequelize);
 const Address = AddressModel(sequelize);
 const LoginHistory = LoginHistoryModel(sequelize);
 
+const Category = CategoryModel(sequelize);
+const Product = ProductModel(sequelize)
+const ProductImage = ProductImageModel(sequelize);
+const ProductVariant = ProductVariantModel(sequelize);
+const Inventory = InventoryModel(sequelize);
 
 
 
@@ -29,7 +34,12 @@ const models = {
   OTPCode,
   RefreshToken,
   Address,
-  LoginHistory
+  LoginHistory,
+  Category,
+  Product,
+  ProductImage,
+  ProductVariant,
+  Inventory
 };
 
 Object.keys(models).forEach(modelName => {
