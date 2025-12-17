@@ -143,3 +143,111 @@ const getProductById = async (req,res) => {
     }
 };
 
+
+const createProduct = async (req,res) => {
+    try{
+        const {
+        categoryId,
+        name,
+        description,
+        shortDescription,
+        sku,
+        price,
+        comparePrice,
+        costPrice,
+        stockQuantity,
+        lowStockThreshold,
+        weight,
+        dimensions,
+        tags,
+        metaTitle,
+        metaDescription,
+        status,
+        isFeatured,
+        images,
+        variants
+        } = req.body;
+    if(!categoryId || !name || !sku || !price){
+        return res.status(400).json({
+            error:'Missing required fields: categoryId,name,sku,price'
+        });
+    }
+
+    const category = await Category.findByPk(categoryId);
+    if(!category){
+        return res.status(404).json({
+            error:'category not found'
+        });
+    }
+
+    const existingsku = await Product.findOne({
+        where: { sku }
+    });
+    if(existingsku){
+        return res.status(409).json({
+            error:'SKU already exists'
+        });
+    }
+
+    const slug = generateSlug(name);
+    let finalSlug = slug;
+    let counter = 1;
+
+    while(await Product.findOne({ where: {slug: finalSlug} })){
+        finalSlug = `${slug}-${counter}`;
+        counter++;
+    }
+
+    const vendorId = req.user.role === 'vendor'
+        ? req.user.userId
+        :req.body.vendorId || req.user.userId;
+
+    const product = await Product.create({
+      vendorId,
+      categoryId,
+      name,
+      slug: finalSlug,
+      description,
+      shortDescription,
+      sku,
+      price,
+      comparePrice,
+      costPrice,
+      stockQuantity: stockQuantity || 0,
+      lowStockThreshold: lowStockThreshold || 5,
+      weight,
+      dimensions,
+      tags: tags || [],
+      metaTitle,
+      metaDescription,
+      status: status || 'draft',
+      isFeatured: isFeatured || false
+    });
+
+    await Inventory.create({
+      productId: product.id,
+      totalStock: stockQuantity || 0,
+      availableStock: stockQuantity || 0,
+      reservedStock: 0,
+      lowStockAlert: (stockQuantity || 0) <= (lowStockThreshold || 5)
+    });
+
+    if(images && Array.isArray(images)){
+        for(let i = 0;i < images.length;i++){
+            await ProductImage.create({
+                productId:product.id,
+                imageUrl:images[i].url,
+                altText:images[i].altText || name,
+                isPrimary:i === 0,
+                displayOrder:i
+            });
+        }
+    }
+
+    
+
+    } catch(error){
+        console.error('Error in createProduct:',error);
+        res.status(500).json({error:'Failed to create product'});
+    }
+};
