@@ -10,6 +10,10 @@ const authRoutes = require('./src/routes/authRoutes');
 const userRoutes = require('./src/routes/userRoutes');
 const adminRoutes = require('./src/routes/adminRoutes');
 
+
+const productRoutes = require('../acocie_stores/src/routes/productRoutes');
+const categoryRoutes = require('../acocie_stores/src/routes/categoryRoutes');
+
 const app = express();
 
 app.use(helmet())
@@ -71,6 +75,9 @@ app.get('/', (req,res) => {
 app.use('/api/v1/auth', authRoutes);
 app.use('/api/v1/users', userRoutes);
 app.use('/api/v1/admin', adminRoutes);
+
+app.use('api/v1/products',productRoutes);
+app.use('api/v1/categories',categoryRoutes);
 
 app.use((req, res) => {
   res.status(404).json({ 

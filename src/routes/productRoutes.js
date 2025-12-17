@@ -11,6 +11,7 @@ router.get('/search',productController.searchProducts);
 router.get('/featured',productController.getFeaturedProducts);
 
 router.post('/:id',authenticate,isVendorOrAdmin,productController.createProduct);
+router.put('/:id',authenticate,isVendorOrAdmin,productController.updateProduct);
 router.delete('/:id',authenticate,isVendorOrAdmin,productController.deleteProduct);
 
 module.exports = router;
