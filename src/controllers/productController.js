@@ -244,7 +244,24 @@ const createProduct = async (req,res) => {
         }
     }
 
+    if(variants && Array.isArray(variants)){
+        for(const variant of variants){
+            await ProductVariant.create({
+                productId:product.id,
+                sku:variant.sku,
+                name:variant.name,
+                options:variant.options,
+                price:variant.price,
+                comparePrice:variant.comparePrice,
+                stockQuantity:variant.stockQuantity || 0,
+                imageUrl:variant.imageUrl,
+                isActive:variant.isActive !== false
+            });
+        }
+    }
+
     
+
 
     } catch(error){
         console.error('Error in createProduct:',error);
