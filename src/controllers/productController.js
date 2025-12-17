@@ -280,3 +280,21 @@ const createProduct = async (req,res) => {
     }
 };
 
+
+const updateProduct = async (req,res) => {
+    try{
+        const { id } = req.params;
+        const updates = req.body;
+
+        const product = await Product.findByPk(id);
+
+        if(!product){
+            return res(404).json({error:'Product not found'});
+        }
+
+        
+    } catch(error){
+        console.error('Error in updateProduct:'.error);
+        res.status(500).json({error:'Failed to update poduct'});
+    }
+};
