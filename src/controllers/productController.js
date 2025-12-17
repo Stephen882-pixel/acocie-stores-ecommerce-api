@@ -445,3 +445,15 @@ const getFeaturedProducts = async (req,res) => {
         res.status(500).json({error:'Failed to get featured products'});
     }
 };
+
+
+module.exports = {
+    getAllProducts,
+    getProductById,
+    createProduct,
+    updateProduct,
+    deleteProduct,
+    searchProducts,
+    getFeaturedProducts
+};
+
