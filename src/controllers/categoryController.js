@@ -78,9 +78,15 @@ const updateCategory = async (req,res) => {
             return res.status(404).json({ error: 'Parent category not found' });
         }
         }
-        
+
+        await category.update(updates);
+        res.json({
+            message:'Category updated successfully',
+            category
+        });
     } catch (error){
         console.error('Error in update category:',error);
         res.status(500).json({error:'Failed to update category'});
     }
 };
+
