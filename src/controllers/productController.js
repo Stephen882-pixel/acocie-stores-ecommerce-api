@@ -292,7 +292,11 @@ const updateProduct = async (req,res) => {
             return res(404).json({error:'Product not found'});
         }
 
+        if(req.user.role === 'vendor' && product.vendorId !== req.user.userId){
+            return res.status(403).json({error:'You can only update your own products'});
+        }
         
+
     } catch(error){
         console.error('Error in updateProduct:'.error);
         res.status(500).json({error:'Failed to update poduct'});
