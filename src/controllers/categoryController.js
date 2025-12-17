@@ -32,7 +32,22 @@ const createCategory = async (req,res) => {
                 return res.status(404).json({error:'Parent category not found'});
             }
         }
-        
+
+        const category = await Category.create({
+            name,
+            slug:finalSlug,
+            description,
+            parentId,
+            imageUrl,
+            isActive:isActive !== false,
+            displayOrder: displayOrder || 0,
+            metaTitle,
+            metaDescription
+        });
+        res.status(201).json({
+            message:'Category created successfully',
+            category
+        });
     } catch (error){
         console.error('Error in createCategory:',error);
         res.status(500).json({error:'Failed to create category'});
