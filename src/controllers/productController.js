@@ -332,3 +332,12 @@ const updateProduct = async (req,res) => {
     }
 };
 
+
+const deleteProduct = async (req,res) => {
+    try{
+        
+    } catch (error){
+        console.error('Error in deleteProduct:',error);
+        res.status(500).json({error:'Failed to delete product'});
+    }
+};
