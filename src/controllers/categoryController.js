@@ -90,3 +90,36 @@ const updateCategory = async (req,res) => {
     }
 };
 
+const deleteCategory = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const category = await Category.findByPk(id);
+
+    if (!category) {
+      return res.status(404).json({ error: 'Category not found' });
+    }
+
+
+    const productCount = await Product.count({ where: { categoryId: id } });
+    if (productCount > 0) {
+      return res.status(400).json({ 
+        error: 'Cannot delete category with existing products' 
+      });
+    }
+
+    const childrenCount = await Category.count({ where: { parentId: id } });
+    if (childrenCount > 0) {
+      return res.status(400).json({ 
+        error: 'Cannot delete category with subcategories' 
+      });
+    }
+
+    await category.destroy();
+
+    res.json({ message: 'Category deleted successfully' });
+  } catch (error) {
+    console.error('Error in deleteCategory:', error);
+    res.status(500).json({ error: 'Failed to delete category' });
+  }
+};
