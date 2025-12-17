@@ -411,3 +411,37 @@ const searchProducts = async (req,res) => {
         res.status(500).json({error:'Failed to search products'})
     }
 };
+
+
+const getFeaturedProducts = async (req,res) => {
+    try{
+        const { limit = 10 } = req.query;
+
+        const products = await Product.findAll({
+        where: {
+            status: 'active',
+            isFeatured: true
+        },
+        include: [
+            {
+            model: Category,
+            as: 'category',
+            attributes: ['id', 'name', 'slug']
+            },
+            {
+            model: ProductImage,
+            as: 'images',
+            where: { isPrimary: true },
+            required: false,
+            limit: 1
+            }
+        ],
+        limit: parseInt(limit),
+        order: [['soldCount', 'DESC'], ['viewCount', 'DESC']]
+        });
+        res.json({ products })
+    } catch (error){
+        console.error('Error in getFeaturedProducts:',error);
+        res.status(500).json({error:'Failed to get featured products'});
+    }
+};
