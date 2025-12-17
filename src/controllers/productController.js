@@ -295,7 +295,12 @@ const updateProduct = async (req,res) => {
         if(req.user.role === 'vendor' && product.vendorId !== req.user.userId){
             return res.status(403).json({error:'You can only update your own products'});
         }
+
+        if(updates.name && updates.name !== product.name){
+            updates.slug = generateSlug(updates.name);
+        }
         
+
 
     } catch(error){
         console.error('Error in updateProduct:'.error);
