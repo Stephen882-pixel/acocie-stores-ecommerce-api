@@ -358,3 +358,17 @@ const deleteProduct = async (req,res) => {
         res.status(500).json({error:'Failed to delete product'});
     }
 };
+
+const searchProducts = async (req,res) => {
+    try{
+        const { q,page = 1,limit = 20 } = req.query;
+        if(!q){
+            return res.status(400).json({error:'Search query required'});
+        }
+
+        
+    } catch (error){
+        console.error('Errro in searchProducts:',error);
+        res.status(500).json({error:'Failed to search products'})
+    }
+};
