@@ -313,6 +313,17 @@ const updateProduct = async (req,res) => {
             );
         }
 
+        const updateProduct = await Product.findByPk(id,{
+            include:[
+                { model:Category,as:'category' },
+                { model:ProductImage,as:'images' },
+                { model:ProductVariant,as:'variant' },
+                { model:Inventory,as:'inventory' }
+            ]
+        });
+
+        
+
 
     } catch(error){
         console.error('Error in updateProduct:'.error);
