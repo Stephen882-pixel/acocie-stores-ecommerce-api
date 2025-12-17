@@ -366,7 +366,46 @@ const searchProducts = async (req,res) => {
             return res.status(400).json({error:'Search query required'});
         }
 
-        
+        const offset = (page - 1) * limit;
+
+        const{ count, rows: products } = await Product.findAndCountAll({
+            where:{
+                status:'active',
+                [Op.or]:[
+                    { name: { [Op.iLike]: `%${q}%` } },
+                    { description: { [Op.iLike]: `%${q}%` } },
+                    { tags: { [Op.contains]: [q.toLowerCase()] } }
+                ]
+            },
+            include:[
+                {
+                    model:Category,
+                    as:'category',
+                    attributes:['id','name','slug']
+                },
+                {
+                    model:ProductImage,
+                    as:'images',
+                    where:{ isPrimary:true },
+                    required:false,
+                    limit:1
+                }
+            ],
+            limit:parseInt(limit),
+            offset:parseInt(offset),
+            order:[['viewCount','DESC'],['created_at','DESC']]
+        });
+
+        res.json({
+            query:q,
+            products,
+            pagination:{
+                total:count,
+                page:parseInt(page),
+                limit:parseInt(limit),
+                pages:Math.ceil(count/limit)
+            }
+        });
     } catch (error){
         console.error('Errro in searchProducts:',error);
         res.status(500).json({error:'Failed to search products'})
