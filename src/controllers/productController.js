@@ -299,7 +299,19 @@ const updateProduct = async (req,res) => {
         if(updates.name && updates.name !== product.name){
             updates.slug = generateSlug(updates.name);
         }
-        
+
+        await product.update(updates);
+
+        if(updates.stockQuantity !== undefined){
+            await Inventory.update(
+                {
+                    totalStock:updates.stockQuantity,
+                    availableStock:updates.stockQuantity,
+                    lowStockAlert:updates.updates.stockQuantity <= (product.lowStockThreshold || 5)
+                },
+                { where: { productId: id } }
+            );
+        }
 
 
     } catch(error){
