@@ -260,11 +260,23 @@ const createProduct = async (req,res) => {
         }
     }
 
-    
+    const completeProduct = await Product.findByPk(product.id,{
+        include: [
+            { model: Category, as: 'category' },
+            { model: ProductImage, as:'images' },
+            { model: ProductVariant, as:'variants' },
+            { model: Inventory,as:'inventory' }
+        ]
+    });
 
+    res.status(201).json({
+        message:'Produc created successfully',
+        product:completeProduct
+    });
 
     } catch(error){
         console.error('Error in createProduct:',error);
         res.status(500).json({error:'Failed to create product'});
     }
 };
+
