@@ -345,6 +345,9 @@ const deleteProduct = async (req,res) => {
             });
         }
 
+        if(req.user.role === 'vendor' && product.vendorId !== req.user.userId){
+            return res.status(403).json({error:'You can only delete you own products'});
+        }
         
     } catch (error){
         console.error('Error in deleteProduct:',error);
