@@ -76,8 +76,8 @@ app.use('/api/v1/auth', authRoutes);
 app.use('/api/v1/users', userRoutes);
 app.use('/api/v1/admin', adminRoutes);
 
-app.use('api/v1/products',productRoutes);
-app.use('api/v1/categories',categoryRoutes);
+app.use('/api/v1/products',productRoutes);
+app.use('/api/v1/categories',categoryRoutes);
 
 app.use((req, res) => {
   res.status(404).json({ 
