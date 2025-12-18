@@ -322,5 +322,20 @@ const removeCartItem = async (req,res) => {
 };
 
 
+const clearCart = async (req, res) => {
+  try {
+    const userId = req.user?.userId;
+    const sessionId = req.headers['x-session-id'];
+
+    const cart = await getOrCreateCart(userId, sessionId);
+
+    await CartItem.destroy({ where: { cartId: cart.id } });
+
+    res.json({ message: 'Cart cleared successfully' });
+  } catch (error) {
+    console.error('Error in clearCart:', error);
+    res.status(500).json({ error: 'Failed to clear cart' });
+  }
+};
 
 
