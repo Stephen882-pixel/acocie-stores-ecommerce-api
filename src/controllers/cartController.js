@@ -24,11 +24,14 @@ const getOrCreateCart = async (userId,sessionId) => {
     } else if(sessionId){
         cart = await Cart.findOne({ where: { sessionId } });
         if(!cart){
-            const expires_at = new Date(Date.now() + 7 * 24* 60 * 60 * 1000);
-            cart = await Cart.create({ sessionId,expires_at });
+            const expires_at = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+            cart = await Cart.create({ sessionId, expires_at });
         }
     }
+
+    return cart; 
 };
+
 
 
 const calculateCartTotals = (items) => {

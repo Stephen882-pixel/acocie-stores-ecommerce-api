@@ -170,7 +170,7 @@ module.exports = (sequelize) => {
     
     const count = await Order.count({
       where: {
-        createdAt: {
+        created_at: {
           [sequelize.Sequelize.Op.gte]: new Date(year, date.getMonth(), 1)
         }
       }
