@@ -250,3 +250,36 @@ const addToCart = async (req, res) => {
   }
 };
 
+const updateCartItem = async (req,res) => {
+    try{
+        const { id } = req.params;
+        const { quantity } = req.body;
+        const userId = req.user?.userId;
+        const sessionId = req.headers['x-session-id'];
+
+        if(!quantity || quantity < 1){
+            return res.status(400).json({error:'Valid quantity required'});
+        }
+
+        const cart = await getOrCreateCart(userId,sessionId);
+
+        const cartItem = await CartItem.findOne({
+            where: { id,cartId:cart.id },
+            include:[
+                { model:Product,as:'product',include:[{ model: Inventory,as:'inventory' }] },
+                { model:ProductVariant,as:'variant' }
+            ]
+        });
+
+        if(!cartItem){
+            return res.status(404).json({error:'Cart item not found'});
+        }
+
+        
+    }catch(error){
+        console.error('Error in updateCartItem:',error);
+        res.status(500).json({error:'Failed to update cart item'});
+    }
+};
+
+
