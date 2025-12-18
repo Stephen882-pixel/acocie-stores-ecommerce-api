@@ -29,3 +29,11 @@ const calculateOrderTotals= (items,shippingCost = 0,taxRate = 0.16) => {
     };
 };
 
+const initiateCheckout = async (req,res) => {
+    try{
+        
+    } catch(error){
+        console.error('Error in initiateCheckout:',error);
+        res.status(500).json({error:'Failed to initiate checkout'});
+    }
+};
