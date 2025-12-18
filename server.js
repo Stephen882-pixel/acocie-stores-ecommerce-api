@@ -11,8 +11,12 @@ const userRoutes = require('./src/routes/userRoutes');
 const adminRoutes = require('./src/routes/adminRoutes');
 
 
+
 const productRoutes = require('../acocie_stores/src/routes/productRoutes');
 const categoryRoutes = require('../acocie_stores/src/routes/categoryRoutes');
+
+const cartRoutes = require('./src/routes/cartRoutes');
+const checkoutRoutes = require('./src/routes/checkoutRoutes');
 
 const app = express();
 
@@ -58,18 +62,22 @@ app.get('/health', async(req,res) => {
     }
 });
 
-app.get('/', (req,res) => {
-    res.json({
-        message: 'Acocie Stores API',
-        version: '1.0.0',
-        status: 'running',
-        endpoints: {
-        auth: '/api/v1/auth',
-        users: '/api/v1/users',
-        admin: '/api/v1/admin',
-        health: '/health'
+app.get('/', (req, res) => {
+  res.json({
+    message: 'Acocie Stores API',
+    version: '1.0.0',
+    status: 'running',
+    endpoints: {
+      auth: '/api/v1/auth',
+      users: '/api/v1/users',
+      admin: '/api/v1/admin',
+      products: '/api/v1/products',
+      categories: '/api/v1/categories',
+      cart: '/api/v1/cart',              
+      checkout: '/api/v1/checkout',     
+      health: '/health'
     }
-    });
+  });
 });
 
 app.use('/api/v1/auth', authRoutes);
@@ -78,6 +86,9 @@ app.use('/api/v1/admin', adminRoutes);
 
 app.use('/api/v1/products',productRoutes);
 app.use('/api/v1/categories',categoryRoutes);
+
+app.use('/api/v1/cart',cartRoutes);
+app.use('/api/v1/checkout',checkoutRoutes);
 
 app.use((req, res) => {
   res.status(404).json({ 
