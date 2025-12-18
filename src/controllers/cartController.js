@@ -398,5 +398,54 @@ const validateCart = async (req,res) => {
 };
 
 
+const mergeCarts = async (req, res) => {
+  try {
+    const userId = req.user.userId;
+    const { guestSessionId } = req.body;
+
+    if (!guestSessionId) {
+      return res.status(400).json({ error: 'Guest session ID required' });
+    }
 
 
+    const guestCart = await Cart.findOne({ 
+      where: { sessionId: guestSessionId },
+      include: [{ model: CartItem, as: 'items' }]
+    });
+
+    if (!guestCart || guestCart.items.length === 0) {
+      return res.json({ message: 'No guest cart to merge' });
+    }
+
+    // Get or create user cart
+    let userCart = await Cart.findOne({ where: { userId } });
+    if (!userCart) {
+      userCart = await Cart.create({ userId });
+    }
+
+    for (const guestItem of guestCart.items) {
+      const existingItem = await CartItem.findOne({
+        where: {
+          cartId: userCart.id,
+          productId: guestItem.productId,
+          variantId: guestItem.variantId || null
+        }
+      });
+
+      if (existingItem) {
+        await existingItem.update({ 
+          quantity: existingItem.quantity + guestItem.quantity 
+        });
+      } else {
+        await guestItem.update({ cartId: userCart.id });
+      }
+    }
+
+    await guestCart.destroy();
+
+    res.json({ message: 'Carts merged successfully' });
+  } catch (error) {
+    console.error('Error in mergeCarts:', error);
+    res.status(500).json({ error: 'Failed to merge carts' });
+  }
+};
