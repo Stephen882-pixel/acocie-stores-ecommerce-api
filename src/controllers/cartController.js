@@ -132,3 +132,12 @@ const getCart = async (req,res) => {
     }
 };
 
+const addToCarrt = async (req,res) => {
+    try{
+
+    } catch (error){
+        console.error('Error in addToCart:',error);
+        res.status(500).json({error:'Failed  to add item to cart'});
+    }
+};
+
