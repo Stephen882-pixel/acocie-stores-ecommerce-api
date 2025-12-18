@@ -132,12 +132,121 @@ const getCart = async (req,res) => {
     }
 };
 
-const addToCarrt = async (req,res) => {
-    try{
+const addToCart = async (req, res) => {
+  try {
+    const { productId, variantId, quantity = 1 } = req.body;
+    const userId = req.user?.userId;
+    const sessionId = req.headers['x-session-id'] || uuidv4();
 
-    } catch (error){
-        console.error('Error in addToCart:',error);
-        res.status(500).json({error:'Failed  to add item to cart'});
+    if (!productId) {
+      return res.status(400).json({ error: 'Product ID is required' });
     }
+
+    if (quantity < 1) {
+      return res.status(400).json({ error: 'Quantity must be at least 1' });
+    }
+
+    const cart = await getOrCreateCart(userId, sessionId);
+
+    const product = await Product.findOne({
+      where: { id: productId, status: 'active' },
+      include: [{ model: Inventory, as: 'inventory' }]
+    });
+
+    if (!product) {
+      return res.status(404).json({ error: 'Product not found or unavailable' });
+    }
+
+    let variant = null;
+    if (variantId) {
+      variant = await ProductVariant.findOne({
+        where: { id: variantId, productId, isActive: true }
+      });
+
+      if (!variant) {
+        return res.status(404).json({ error: 'Product variant not found' });
+      }
+    }
+
+    const availableStock = variant 
+      ? variant.stockQuantity 
+      : product.inventory?.availableStock || 0;
+
+    if (availableStock < quantity) {
+      return res.status(400).json({ 
+        error: 'Insufficient stock',
+        availableStock 
+      });
+    }
+
+    const currentPrice = variant?.price || product.price;
+
+    const existingItem = await CartItem.findOne({
+      where: {
+        cartId: cart.id,
+        productId,
+        variantId: variantId || null
+      }
+    });
+
+    let cartItem;
+
+    if (existingItem) {
+      const newQuantity = existingItem.quantity + quantity;
+
+      if (availableStock < newQuantity) {
+        return res.status(400).json({ 
+          error: 'Insufficient stock for requested quantity',
+          availableStock 
+        });
+      }
+
+      await existingItem.update({ 
+        quantity: newQuantity,
+        priceAtAddition: currentPrice 
+      });
+      cartItem = existingItem;
+    } else {
+      // Add new item
+      cartItem = await CartItem.create({
+        cartId: cart.id,
+        productId,
+        variantId,
+        quantity,
+        priceAtAddition: currentPrice
+      });
+    }
+
+    const completeItem = await CartItem.findByPk(cartItem.id, {
+      include: [
+        {
+          model: Product,
+          as: 'product',
+          include: [
+            {
+              model: ProductImage,
+              as: 'images',
+              where: { isPrimary: true },
+              required: false,
+              limit: 1
+            }
+          ]
+        },
+        {
+          model: ProductVariant,
+          as: 'variant'
+        }
+      ]
+    });
+
+    res.status(201).json({
+      message: 'Item added to cart',
+      cartItem: completeItem,
+      sessionId: !userId ? sessionId : undefined
+    });
+  } catch (error) {
+    console.error('Error in addToCart:', error);
+    res.status(500).json({ error: 'Failed to add item to cart' });
+  }
 };
 
