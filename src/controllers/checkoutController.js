@@ -306,3 +306,5 @@ module.exports = {
   getCheckoutSummary,
   placeOrder
 };
+
+
