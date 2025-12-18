@@ -14,6 +14,11 @@ const ProductImageModel = require('./ProductImage');
 const ProductVariantModel = require('./ProductVariant');
 const InventoryModel = require('./Inventory');
 
+const CartModel = require('./Cart');
+const CartItemModel = require('./CartItem');
+const OrderModel = require('./Order');
+const OrderItemModel = require('./OrderItem');
+
 const User = UserModel(sequelize);
 const OTPCode = OTPCodeModel(sequelize);
 const RefreshToken = RefreshTokenModel(sequelize);
@@ -25,6 +30,11 @@ const Product = ProductModel(sequelize)
 const ProductImage = ProductImageModel(sequelize);
 const ProductVariant = ProductVariantModel(sequelize);
 const Inventory = InventoryModel(sequelize);
+
+const Cart = CartModel(sequelize);
+const CartItem = CartItemModel(sequelize);
+const Order = OrderModel(sequelize);
+const OrderItem = OrderItemModel(sequelize);
 
 
 
@@ -39,7 +49,11 @@ const models = {
   Product,
   ProductImage,
   ProductVariant,
-  Inventory
+  Inventory,
+  Cart,
+  CartItem,
+  Order,
+  OrderItem
 };
 
 Object.keys(models).forEach(modelName => {
@@ -52,3 +66,4 @@ module.exports = {
   sequelize,
   ...models
 };
+
