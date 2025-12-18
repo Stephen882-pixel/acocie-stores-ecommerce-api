@@ -1,6 +1,5 @@
 
-const models = require('../models');
-const { Product, Category, ProductImage, ProductVariant, Inventory, User } = require('../models');
+const { sequelize,Product, Category, ProductImage, ProductVariant, Inventory, User } = require('../models');
 const { Op, or } = require('sequelize');
 
 const generateSlug = (text) => {
@@ -281,81 +280,83 @@ const createProduct = async (req,res) => {
 };
 
 
-const updateProduct = async (req,res) => {
-    try{
-        const { id } = req.params;
-        const updates = req.body;
+const updateProduct = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const updates = req.body;
 
-        const product = await Product.findByPk(id);
+    const product = await Product.findByPk(id);
 
-        if(!product){
-            return res(404).json({error:'Product not found'});
-        }
-
-        if(req.user.role === 'vendor' && product.vendorId !== req.user.userId){
-            return res.status(403).json({error:'You can only update your own products'});
-        }
-
-        if(updates.name && updates.name !== product.name){
-            updates.slug = generateSlug(updates.name);
-        }
-
-        await product.update(updates);
-
-        if(updates.stockQuantity !== undefined){
-            await Inventory.update(
-                {
-                    totalStock:updates.stockQuantity,
-                    availableStock:updates.stockQuantity,
-                    lowStockAlert:updates.updates.stockQuantity <= (product.lowStockThreshold || 5)
-                },
-                { where: { productId: id } }
-            );
-        }
-
-        const updateProduct = await Product.findByPk(id,{
-            include:[
-                { model:Category,as:'category' },
-                { model:ProductImage,as:'images' },
-                { model:ProductVariant,as:'variant' },
-                { model:Inventory,as:'inventory' }
-            ]
-        });
-
-        res.json({
-            message:'Product updated successfully',
-            product:updateProduct
-        });
-    } catch(error){
-        console.error('Error in updateProduct:'.error);
-        res.status(500).json({error:'Failed to update poduct'});
+    if (!product) {
+      return res.status(404).json({ error: 'Product not found' });
     }
+
+
+    if (req.user.role === 'vendor' && product.vendorId !== req.user.userId) {
+      return res.status(403).json({ error: 'You can only update your own products' });
+    }
+
+    if (updates.name && updates.name !== product.name) {
+      updates.slug = generateSlug(updates.name);
+    }
+
+    await product.update(updates);
+
+    if (updates.stockQuantity !== undefined) {
+      await Inventory.update(
+        {
+          totalStock: updates.stockQuantity,
+          availableStock: updates.stockQuantity,
+          lowStockAlert: updates.stockQuantity <= (product.lowStockThreshold || 5)
+        },
+        { where: { productId: id } }
+      );
+    }
+
+    const updatedProduct = await Product.findByPk(id, {
+      include: [
+        { model: Category, as: 'category' },
+        { model: ProductImage, as: 'images' },
+        { model: ProductVariant, as: 'variants' },
+        { model: Inventory, as: 'inventory' }
+      ]
+    });
+
+    res.json({
+      message: 'Product updated successfully',
+      product: updatedProduct
+    });
+  } catch (error) {
+    console.error('Error in updateProduct:', error);
+    res.status(500).json({ error: 'Failed to update product' });
+  }
 };
 
+const deleteProduct = async (req, res) => {
+    const { id } = req.params;
 
-const deleteProduct = async (req,res) => {
-    try{
-        const { id } = req.params;
+    const product = await Product.findByPk(id);
+    if (!product) {
+        return res.status(404).json({ error: 'Product not found' });
+    }
 
-        const product = await Product.findByPk(id);
+    if (req.user.role === 'vendor' && product.vendorId !== req.user.userId) {
+        return res.status(403).json({ error: 'You can only delete your own products' });
+    }
 
-        if(!product){
-            return res.status(404).json({
-                error:'Product not found'
-            });
-        }
+    try {
+        await sequelize.transaction(async (t) => {
+        await ProductImage.destroy({ where: { productId: id }, transaction: t });
+        await ProductVariant.destroy({ where: { productId: id }, transaction: t });
+        await Inventory.destroy({ where: { productId: id }, transaction: t });
 
-        if(req.user.role === 'vendor' && product.vendorId !== req.user.userId){
-            return res.status(403).json({error:'You can only delete you own products'});
-        }
+        await product.destroy({ transaction: t });
+        });
 
-        await Product.destroy();
-
-        res.json({message:'Product deleted successfully'});
-
-    } catch (error){
-        console.error('Error in deleteProduct:',error);
-        res.status(500).json({error:'Failed to delete product'});
+        res.json({ message: 'Product deleted successfully' });
+    } catch (error) {
+        console.error('Error in deleteProduct:', error);
+        res.status(500).json({ error: 'Failed to delete product' });
     }
 };
 
