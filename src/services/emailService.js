@@ -131,6 +131,75 @@ const sendWelcomeEmail = async(email,firstName) => {
   }
 };
 
+const sendOrderConfirmation = async (email, firstName, orderNumber, totalAmount) => {
+  const mailOptions = {
+    from: process.env.EMAIL_FROM,
+    to: email,
+    subject: `Order Confirmation - ${orderNumber} - Acocie Stores`,
+    html: `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+        <div style="text-align: center; margin-bottom: 30px;">
+          <h1 style="color: #2563eb;">Acocie Stores</h1>
+        </div>
+        
+        <div style="background-color: #10b981; color: white; padding: 20px; border-radius: 8px; text-align: center; margin-bottom: 30px;">
+          <h2 style="margin: 0;">Order Confirmed! 🎉</h2>
+        </div>
+
+        <h2 style="color: #333;">Hi ${firstName},</h2>
+        <p style="color: #666; font-size: 16px;">Thank you for your order! We've received your order and will process it shortly.</p>
+        
+        <div style="background-color: #f3f4f6; padding: 20px; border-radius: 8px; margin: 30px 0;">
+          <h3 style="color: #2563eb; margin-top: 0;">Order Details</h3>
+          <table style="width: 100%; color: #333;">
+            <tr>
+              <td style="padding: 8px 0;"><strong>Order Number:</strong></td>
+              <td style="padding: 8px 0; text-align: right;">${orderNumber}</td>
+            </tr>
+            <tr>
+              <td style="padding: 8px 0;"><strong>Total Amount:</strong></td>
+              <td style="padding: 8px 0; text-align: right; font-size: 20px; color: #2563eb;"><strong>KES ${totalAmount}</strong></td>
+            </tr>
+          </table>
+        </div>
+
+        <div style="background-color: #eff6ff; padding: 20px; border-radius: 8px; margin: 30px 0;">
+          <h3 style="color: #2563eb; margin-top: 0;">What's Next?</h3>
+          <ul style="color: #666;">
+            <li>We'll process your order within 24 hours</li>
+            <li>You'll receive a shipping confirmation email once your order is dispatched</li>
+            <li>Track your order anytime in your account dashboard</li>
+          </ul>
+        </div>
+
+        <div style="text-align: center; margin: 30px 0;">
+          <a href="${process.env.FRONTEND_URL}/orders/${orderNumber}" 
+             style="background-color: #2563eb; color: white; padding: 12px 30px; text-decoration: none; border-radius: 6px; display: inline-block;">
+            Track Your Order
+          </a>
+        </div>
+
+        <p style="color: #666; font-size: 14px;">If you have any questions, feel free to contact our support team.</p>
+
+        <hr style="margin: 40px 0; border: none; border-top: 1px solid #e5e7eb;">
+        <p style="color: #9ca3af; font-size: 12px; text-align: center;">
+          Acocie Stores - Your Trusted E-commerce Platform<br>
+          © ${new Date().getFullYear()} Acocie Stores. All rights reserved.
+        </p>
+      </div>
+    `
+  };
+
+  try {
+    await transporter.sendMail(mailOptions);
+    console.log(`✓ Order confirmation sent to ${email} for order ${orderNumber}`);
+    return true;
+  } catch (error) {
+    console.error('✗ Error sending order confirmation:', error.message);
+    return false;
+  }
+};
+
 module.exports = {
   sendSignUpOTP,
   sendPasswordResetOTP,
