@@ -275,6 +275,17 @@ const updateCartItem = async (req,res) => {
             return res.status(404).json({error:'Cart item not found'});
         }
 
+        const availableStock = cartItem.variant
+            ? cartItem.variant.stockQuantity
+            : cartItem.product.inventory?.availableStock || 0;
+
+        if(availableStock < quantity){
+            return res.status(400).json({
+                error:'Insufficient stock',
+                availableStock
+            });
+        }
+
         
     }catch(error){
         console.error('Error in updateCartItem:',error);
