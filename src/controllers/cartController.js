@@ -297,4 +297,30 @@ const updateCartItem = async (req,res) => {
     }
 };
 
+const removeCartItem = async (req,res) => {
+    try{
+        const { id } = req.params;
+        const userId = req.user?.userId;
+        const sessionId = req.headers['x-session-id'];
+
+        const cart = await getOrCreateCart(userId,sessionId);
+
+        const cartItem = await CartItem.findOne({
+            where: { id,cartId:cart.id }
+        });
+
+        if(!cartItem){
+            return res.status(404).json({error:'Cart item not found'});
+        }
+
+        await cartItem.destroy();
+        res.json({message:'Item removed from cart'});
+    } catch (error){
+        console.error('Error in removeCartItem:',error);
+        res.status(500).json({error:'Failed to remove item from the cart'});
+    }
+};
+
+
+
 
