@@ -29,3 +29,16 @@ const getOrCreateCart = async (userId,sessionId) => {
     }
 };
 
+
+const calculateCartTotals = (items) => {
+  const subtotal = items.reduce((sum, item) => {
+    const price = item.variant?.price || item.product.price;
+    return sum + (parseFloat(price) * item.quantity);
+  }, 0);
+
+  return {
+    subtotal: subtotal.toFixed(2),
+    itemCount: items.reduce((sum, item) => sum + item.quantity, 0)
+  };
+}
+
