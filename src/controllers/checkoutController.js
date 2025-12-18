@@ -106,11 +106,55 @@ const initiateCheckout = async (req,res) => {
 };
 
 
-const getCheckoutSummary = async (req,res) => {
-    try{
+const getCheckoutSummary = async (req, res) => {
+  try {
+    const userId = req.user.userId;
+    const { shippingAddressId } = req.query;
 
-    } catch (error){
-        console.error('Error in getCheckoutSummary:',error);
-        res.status(500).json({error:'Failed to fetch checkout summary'});
+    const cart = await Cart.findOne({
+      where: { userId },
+      include: [
+        {
+          model: CartItem,
+          as: 'items',
+          include: [
+            { model: Product, as: 'product' },
+            { model: ProductVariant, as: 'variant' }
+          ]
+        }
+      ]
+    });
+
+    if (!cart || cart.items.length === 0) {
+      return res.status(400).json({ error: 'Cart is empty' });
     }
+
+    const addresses = await Address.findAll({
+      where: { userId },
+      order: [['isDefault', 'DESC']]
+    });
+
+    const orderItems = cart.items.map(item => ({
+      productId: item.productId,
+      variantId: item.variantId,
+      productName: item.product.name,
+      variantName: item.variant?.name,
+      quantity: item.quantity,
+      unitPrice: item.variant?.price || item.product.price
+    }));
+
+    const shippingCost = 10.00;
+
+    const totals = calculateOrderTotals(orderItems, shippingCost);
+
+    res.json({
+      items: orderItems,
+      addresses,
+      selectedShippingAddress: shippingAddressId || addresses[0]?.id,
+      ...totals
+    });
+  } catch (error) {
+    console.error('Error in getCheckoutSummary:', error);
+    res.status(500).json({ error: 'Failed to get checkout summary' });
+  }
 };
