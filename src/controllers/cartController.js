@@ -338,4 +338,65 @@ const clearCart = async (req, res) => {
   }
 };
 
+const validateCart = async (req,res) => {
+    try{
+        const userId = req.user?.userId;
+        const sessionId = req.headers['x-session-id'];
+
+        const cart = await getOrCreateCart(userId,sessionId);
+
+        const items = await CartItem.findAll({
+            where: { cartId: cart.id },
+            include: [
+                {
+                    model:Product,
+                    as:'product',
+                    include:[{ model:Inventory,as:'inventory' }]
+                },
+                {
+                    model:ProductVariant,
+                    as:'variant'
+                }
+            ]
+        });
+
+        const validation = {
+            isValid: true,
+            issues: [],
+            invalidItems:[]
+        };
+
+        for(const item of items){
+            const product = item.product;
+            const variant = item.variant;
+            const itemIssues = [];
+
+            if(product.status !== 'active'){
+                itemIssues.push('Product no longer available');
+                validation.isValid =  false;
+            }
+
+            const currentPrice = variant?.price || product.price;
+            if(parseFloat(currentPrice) !== parseFloat(item.priceAtAddition)){
+                itemIssues.push(`Price changed from ${item.priceAtAddition} to ${currentPrice}`);
+            }
+
+            if(itemIssues.length > 0){
+                validation.invalidItems.push({
+                    itemId:item.id,
+                    productName:product.name,
+                    issues:itemIssues
+                });
+                validation.issues.push(...itemIssues);
+            }
+        }
+        res.json(validation);
+    } catch (error){
+        console.error('Error in validateCart:',error);
+        res.status(500).json({error:'Failed to validate validate cart'});
+    }
+};
+
+
+
 
