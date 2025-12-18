@@ -286,7 +286,11 @@ const updateCartItem = async (req,res) => {
             });
         }
 
-        
+        await cartItem.update({quantity});
+        res.json({
+            message:'Cart item updated',
+            cartItem
+        })
     }catch(error){
         console.error('Error in updateCartItem:',error);
         res.status(500).json({error:'Failed to update cart item'});
