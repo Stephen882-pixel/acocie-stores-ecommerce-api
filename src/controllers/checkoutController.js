@@ -105,3 +105,12 @@ const initiateCheckout = async (req,res) => {
     }
 };
 
+
+const getCheckoutSummary = async (req,res) => {
+    try{
+
+    } catch (error){
+        console.error('Error in getCheckoutSummary:',error);
+        res.status(500).json({error:'Failed to fetch checkout summary'});
+    }
+};
