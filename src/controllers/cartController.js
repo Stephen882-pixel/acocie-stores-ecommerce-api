@@ -449,3 +449,14 @@ const mergeCarts = async (req, res) => {
     res.status(500).json({ error: 'Failed to merge carts' });
   }
 };
+
+module.exports = {
+    getCart,
+    addToCart,
+    updateCartItem,
+    removeCartItem,
+    clearCart,
+    validateCart,
+    mergeCarts
+};
+
