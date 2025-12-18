@@ -203,7 +203,8 @@ const sendOrderConfirmation = async (email, firstName, orderNumber, totalAmount)
 module.exports = {
   sendSignUpOTP,
   sendPasswordResetOTP,
-  sendWelcomeEmail
+  sendWelcomeEmail,
+  sendOrderConfirmation
 };
 
 
