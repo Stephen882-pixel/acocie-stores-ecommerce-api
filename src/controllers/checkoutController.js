@@ -301,3 +301,8 @@ const placeOrder = async (req, res) => {
   }
 };
 
+module.exports = {
+  initiateCheckout,
+  getCheckoutSummary,
+  placeOrder
+};
