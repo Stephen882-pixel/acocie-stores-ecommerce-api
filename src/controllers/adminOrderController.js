@@ -25,3 +25,12 @@ const recordStatusChange = async (orderId, oldStatus, newStatus, userId, reason 
     changeReason: reason
   });
 };
+
+const getAllOrders = async (req,res) => {
+    try{
+        
+    }catch(error){
+        console.error('Error in getAllOrders:',error);
+        res.status(500).json({error:'Failed to fetch all orders'});
+    }
+};
