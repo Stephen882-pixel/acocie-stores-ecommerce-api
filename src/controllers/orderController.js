@@ -214,6 +214,17 @@ const requestOrderCancellation = async (req,res) => {
             where: { id,userId }
         });
 
+        if(!order){
+            return res.status(404).json({error:'Order not found'});
+        }
+
+        if(!['pending','confirmed'].includes(order.status)){
+            return res.status(400).json({
+                error:'Order cannot be cancelled at this stage',
+                currentStatus:order.status
+            });
+        }
+
         
     }catch(error){
         console.error('Error in requestOrderCancellation:',error);
