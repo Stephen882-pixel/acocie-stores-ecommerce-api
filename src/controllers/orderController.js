@@ -144,3 +144,12 @@ const getOrderById = async (req,res) => {
         });
     }
 };
+
+const getOrderByNumber = async (req,res) => {
+    try{
+        
+    } catch(error){
+        console.error('Error in getOrderByNumber:',error);
+        res.status(500).json({error:'Failed to fetch order'});
+    }
+};
