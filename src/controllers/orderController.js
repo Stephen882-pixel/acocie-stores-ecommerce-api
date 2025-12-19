@@ -16,7 +16,21 @@ const emailService = require('../services/emailService');
 
 const getOrderHistory = async(req,res) => {
     try{
-        
+        const userId = req.user.userId;
+        const {
+            page =1,
+            limit = 20,
+            status,
+            startDate,
+            endDate
+        } = req.query;
+
+        const offset = (page - 1) * limit;
+        const where = { userId };
+
+        if(status){
+            where.status = status;
+        }
     } catch (error){
         console.error('Error in getOrderHistory:',error);
         res.status(500).json({error:'Failef to fetch order history'});
