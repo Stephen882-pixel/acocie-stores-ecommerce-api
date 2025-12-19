@@ -396,3 +396,16 @@ const getOrderStats = async (req,res) => {
         res.status(500).json({error:'Failed to fetch order staticts'});
     }
 };
+
+
+module.exports = {
+    getOrderHistory,
+    getOrderById,
+    getOrderByNumber,
+    getOrderTracking,
+    requestOrderCancellation,
+    requestReturn,
+    addCustomerNote,
+    getOrderStats
+};
+
