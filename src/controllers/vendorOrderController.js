@@ -71,6 +71,16 @@ const getVendorOrders = async (req,res) => {
         distinct: true
         });
 
+        res.json({
+            orders,
+            pagination:{
+                total:count,
+                page:parseInt(page),
+                limit:parseInt(limit),
+                pages:Math.ceil(count/limit)
+            }
+        });
+
     } catch(error){
         console.error('Error in getVendorOrders:',error);
         res.status(500).json({error:'Failed to fetch vendor orders'});
