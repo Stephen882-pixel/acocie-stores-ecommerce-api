@@ -542,3 +542,14 @@ const getVendorDashboardStats = async (req, res) => {
     res.status(500).json({ error: 'Failed to fetch vendor statistics' });
   }
 };
+
+module.exports = {
+  getVendorOrders,
+  getVendorOrderById,
+  acceptOrder,
+  shipOrder,
+  markAsDelivered,
+  updateTracking,
+  addVendorNote,
+  getVendorDashboardStats
+};
