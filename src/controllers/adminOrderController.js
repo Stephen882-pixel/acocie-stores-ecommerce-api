@@ -105,3 +105,11 @@ const getAllOrders = async (req,res) => {
     }
 };
 
+const getOrderById = async (req,res) => {
+    try{
+        
+    } catch(error){
+        console.error('Error in getOrderById:',error);
+        res.json({error:'Failed to fetch order'});
+    }
+};
