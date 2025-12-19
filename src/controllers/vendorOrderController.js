@@ -11,6 +11,7 @@ const {
 } = require('../models');
 const { Op } = require('sequelize');
 const emailService = require('../services/emailService');
+const models = require('../models');
 
 const recordStatusChange = async (orderId, oldStatus, newStatus, userId, reason = null) => {
   await OrderStatusHistory.create({
@@ -90,9 +91,49 @@ const getVendorOrders = async (req,res) => {
 
 const getVendorOrderById = async (req,res) => {
     try{
-        
+        const { id } = req.params;
+        const vendorId = req.user.userId;
+
+        const order = await Order.findOne({
+            where: { id },
+            include:[
+                {
+                    model:OrderItem,
+                    as:'items',
+                    where: { vendorId },
+                    required:true,
+                    include:[
+                        {
+                            model:Product,
+                            as:'product'
+                        }
+                    ]
+                },
+                {
+                    model:User,
+                    as:'user',
+                    attributes:['id','firstName','lastName','email','phone']
+                },
+                {
+                    model:Address,
+                    as:'shippingAddress'
+                },
+                {
+                    model:OrderTracking,
+                    as:'tracking',
+                    required:false
+                }
+            ]
+        });
+
+        if(!order){
+            return res.status(404).json({error:'Order not found or no items from your store'});
+        }
+
+        res.json({ order });
     }catch(error){
         console.error('Error in getVendorOrderById:',error);
         res.status(500).json({error:'Failed to fetch the order'});
     }
 };
+
