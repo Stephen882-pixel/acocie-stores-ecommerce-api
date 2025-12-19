@@ -31,6 +31,14 @@ const getOrderHistory = async(req,res) => {
         if(status){
             where.status = status;
         }
+
+        if(startDate || endDate){
+            where.created_at = {};
+            if(startDate) where.created_at[Op.gte] = new Date(startDate);
+            if(endDate) where.created_at[Op.lte] = new Date(endDate);
+        }
+
+        
     } catch (error){
         console.error('Error in getOrderHistory:',error);
         res.status(500).json({error:'Failef to fetch order history'});
