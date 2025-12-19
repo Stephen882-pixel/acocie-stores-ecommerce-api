@@ -267,6 +267,13 @@ const requestReturn = async (req,res) => {
         if(!reason){
             return res.status(400).json({ error: 'Return reason is required' });
         }
+
+        const order = await Order.findOne({ where: { id, userId } });
+
+        if (!order) {
+        return res.status(404).json({ error: 'Order not found' });
+        }
+        
     } catch(error){
         console.error('Error in requestReturn:',error);
         res.status(500).json({error:'Failed to submit return request'});
