@@ -249,7 +249,10 @@ const updateOrderStatus = async (req,res) => {
             status
         ).catch(err => console.error('Email send failed:',err));
 
-        
+        res.json({
+            message:'Order status updated successfully',
+            order
+        });
     } catch(error){
         console.error('Error in updateOrderStatus:',error);
         res.status(500).json({error:'Failed to update order status'});
