@@ -364,7 +364,33 @@ const addCustomerNote = async (req,res) => {
 
 const getOrderStats = async (req,res) => {
     try{
-        
+        const userId = req.user.userId;
+
+        const totalOrders = await Order.count({ where: { userId } });
+
+        const totalSpent = await Order.sum('totalAmount',{
+            where: {
+                userId,
+                paymentstatus:'paid'
+            }
+        });
+
+        const orderByStatus = await Order.findAll({
+            where: { userId },
+            limit:5,
+            order:[['created_at','DESC']],
+            attributes:['id','orderNumber','status','totalAmount','created_at']
+        });
+
+        res.json({
+            totalOrders,
+            totalSpent:totalSpent || 0,
+            orderByStatus:orderByStatus.map(o => ({
+                status:o.status,
+                count:parseInt(o.get('count'))
+            })),
+            recentOrders
+        });
     } catch (error){    
         console.error('Error in getOrderStats:',error);
         res.status(500).json({error:'Failed to fetch order staticts'});
