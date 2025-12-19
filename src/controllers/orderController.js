@@ -225,6 +225,14 @@ const requestOrderCancellation = async (req,res) => {
             });
         }
 
+        const existing = await OrderCancellation.findOne({
+            where:{
+                orderId:id,
+                type:'cancellation',
+                status:'pending'
+            }
+        });
+
         
     }catch(error){
         console.error('Error in requestOrderCancellation:',error);
