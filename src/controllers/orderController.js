@@ -209,6 +209,12 @@ const requestOrderCancellation = async (req,res) => {
         if(!reason){
             return res.status(400).json({error:'Cancellation reason is required'});
         }
+
+        const order = await Order.findOne({
+            where: { id,userId }
+        });
+
+        
     }catch(error){
         console.error('Error in requestOrderCancellation:',error);
         res.status(500).json({error:'Failed to submit the cancellation request'});
