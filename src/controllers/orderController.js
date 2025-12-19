@@ -198,3 +198,13 @@ const getOrderTracking = async (req,res) => {
         res.status(500).json({error:'Failed to fetch tracking informations'});
     }
 };
+
+
+const requestOrderCancellation = async (req,res) => {
+    try{
+        
+    }catch(error){
+        console.error('Error in requestOrderCancellation:',error);
+        res.status(500).json({error:'Failed to submit the cancellation request'});
+    }
+};
