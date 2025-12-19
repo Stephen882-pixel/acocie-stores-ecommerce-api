@@ -333,9 +333,33 @@ const addCustomerNote = async (req,res) => {
         if(!order){
             return res.status(404).json({error:'Order not found'});
         }
-        
+
+        const note = await OrderNote.create({
+            orderId:id,
+            userId,
+            noteType:'customer_note',
+            content,
+            isVisibleToCustomer:true
+        });
+
+        const completeNote = await OrderNote.findByPk(note.id,{
+            include:[
+                {
+                    model:User,
+                    as:'user',
+                    attributes:['id','firstName','lastName']
+                }
+            ]
+        });
+
+        res.status(201).json({
+            message:'Note added successfully',
+            note:completeNote
+        });
     }catch(error){  
         console.error('Error in addCustomerNote:',error);
         res.status(500).json({error:'Failed to add note'});
     }
 };
+
+
