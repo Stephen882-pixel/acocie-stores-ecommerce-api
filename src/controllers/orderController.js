@@ -72,3 +72,15 @@ const getOrderHistory = async(req,res) => {
         res.status(500).json({error:'Failef to fetch order history'});
     }
 };
+
+
+const getOrderById = async (req,res) => {
+    try{
+        
+    }catch(error){
+        console.error('Error in getOrderById:',error);
+        res.status(500).json({
+            error:'Failed to fetch order'
+        });
+    }
+};
