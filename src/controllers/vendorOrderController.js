@@ -171,6 +171,24 @@ const acceptOrder = async (req,res) => {
         });
         }
         
+
+        const oldStatus = order.status;
+        await order.update({ status: 'processing' });
+
+        await recordStatusChange(id, oldStatus, 'processing', vendorId, 'Vendor accepted order');
+
+
+        emailService.sendOrderProcessingNotification(
+        order.user.email,
+        order.user.firstName,
+        order.orderNumber
+        ).catch(err => console.error('Email send failed:', err));
+
+        res.json({
+        message: 'Order accepted and moved to processing',
+        order
+        });
+
     }catch(error){
         console.error('Error from acceptOrder:',error);
         res.status(500).json({error:'Failed to accept the order'});
