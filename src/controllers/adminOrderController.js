@@ -171,8 +171,21 @@ const getOrderById = async (req,res) => {
 };
 
 const updateOrderStatus = async (req,res) => {
+    const transaction = await sequelize.transaction();
     try{
-        
+        const { id } = req.params;
+        const { status,reason } = req.body;
+        const adminId = req.User.userId;
+
+        if(!status){
+            return res.status(400).json({error:'Status is required'});
+        }
+
+
+        const validStatuses = ['pending','confirmed','processing','shipped','delivered','cancelled','refunded'];
+        if(!validStatuses){
+            return res.status(400).json({error:'Invalid status'});
+        }
     } catch(error){
         console.error('Error in updateOrderStatus:',error);
         res.status(500).json({error:'Failed to update order status'});
