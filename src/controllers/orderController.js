@@ -13,6 +13,7 @@ const {
 } = require('../models');
 const { Op } = require('sequelize');
 const emailService = require('../services/emailService');
+const models = require('../models');
 
 const getOrderHistory = async(req,res) => {
     try{
@@ -76,7 +77,66 @@ const getOrderHistory = async(req,res) => {
 
 const getOrderById = async (req,res) => {
     try{
-        
+        const { id } = req.params;
+        const userId = req.user.userId;
+
+        const order = await Order.findOne({
+            where:{ id,userId },
+            include:[
+                {
+                    model:OrderItem,
+                    as:'items',
+                    include:[
+                        {
+                            model:Product,
+                            as:'product',
+                            attributes:['id','name','slug','status']
+                        },
+                        {
+                            model:User,
+                            as:'vendor',
+                            attributes:['id','firstName','lastName','email']
+                        }
+                    ]
+                },
+                {
+                    model:Address,
+                    as:'shippingAddress'
+                },
+                {
+                    model:Address,
+                    as:'billingAddress'
+                },
+                {
+                    model:OrderTracking,
+                    as:'tracking',
+                    required:false
+                },
+                {
+                    model:OrderNote,
+                    as:'notes',
+                    where:{
+                        [Op.or]:[
+                            { isVisibleToCustomer:true },
+                            { userId }
+                        ]
+                    },
+                    required:false,
+                    include:[
+                        {
+                            model:User,
+                            as:'user',
+                            attributes:['id','firstName','lastName','role']
+                        }
+                    ],
+                    order:[['created_at','DESC']]
+                }
+            ]
+        });
+        if(!order){
+            return res.status(404).json({error:'Order not found'});
+        }
+        res.json({ order })
     }catch(error){
         console.error('Error in getOrderById:',error);
         res.status(500).json({
