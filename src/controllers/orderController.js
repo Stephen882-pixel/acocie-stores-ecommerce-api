@@ -233,6 +233,18 @@ const requestOrderCancellation = async (req,res) => {
             }
         });
 
+        if(existing){
+            return res.status(400).json({error:'Cancellation request already pending'});
+        }
+
+        const cancellation = await OrderCancellation.create({
+            orderId:id,
+            type:'cancellation',
+            status:'pending',
+            reason,
+            requestedByUserId:userId
+        });
+
         
     }catch(error){
         console.error('Error in requestOrderCancellation:',error);
