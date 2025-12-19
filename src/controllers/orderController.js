@@ -260,7 +260,13 @@ const requestOrderCancellation = async (req,res) => {
 
 const requestReturn = async (req,res) => {
     try{
+        const { id } = req.params;
+        const { reason } = req.body;
+        const userId = req.user.userId;
         
+        if(!reason){
+            return res.status(400).json({ error: 'Return reason is required' });
+        }
     } catch(error){
         console.error('Error in requestReturn:',error);
         res.status(500).json({error:'Failed to submit return request'});
