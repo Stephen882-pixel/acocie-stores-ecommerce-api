@@ -192,7 +192,7 @@ const getOrderTracking = async (req,res) => {
             return res.status(404).json({error:'Tracking information not available yet'});
         }
 
-        
+        res.json({ tracking });
     } catch(error){
         console.error('Error in getOrderTracking:',error);
         res.status(500).json({error:'Failed to fetch tracking informations'});
