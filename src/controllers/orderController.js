@@ -300,6 +300,18 @@ const requestReturn = async (req,res) => {
         return res.status(400).json({ error: 'Return request already pending' });
         }
         
+        const returnRequest = await OrderCancellation.create({
+        orderId: id,
+        type: 'return',
+        status: 'pending',
+        reason,
+        requestedByUserId: userId
+        });
+
+        res.status(201).json({
+        message: 'Return request submitted successfully',
+        returnRequest
+        });
     } catch(error){
         console.error('Error in requestReturn:',error);
         res.status(500).json({error:'Failed to submit return request'});
