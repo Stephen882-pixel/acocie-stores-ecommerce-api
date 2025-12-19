@@ -21,3 +21,12 @@ const recordStatusChange = async (orderId, oldStatus, newStatus, userId, reason 
     changeReason: reason
   });
 };
+
+const getVendorOrders = async (req,res) => {
+    try{
+        
+    } catch(error){
+        console.error('Error in getVendorOrders:',error);
+        res.status(500).json({error:'Failed to fetch vendor orders'});
+    }
+};
