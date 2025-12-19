@@ -248,7 +248,10 @@ const requestOrderCancellation = async (req,res) => {
         emailService.sendCancellationRequestNotification(order.orderNumber,reason)
             .catch(err => console.error('Email send failed:',err));
 
-            
+        res.status(201).json({
+            message:'Cancellation request submitted successfully',
+            cancellation
+        });
     }catch(error){
         console.error('Error in requestOrderCancellation:',error);
         res.status(500).json({error:'Failed to submit the cancellation request'});
