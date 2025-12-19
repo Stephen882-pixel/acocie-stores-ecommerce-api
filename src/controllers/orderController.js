@@ -38,7 +38,35 @@ const getOrderHistory = async(req,res) => {
             if(endDate) where.created_at[Op.lte] = new Date(endDate);
         }
 
-        
+        const { count, rows: orders } = await Orde.findAndCountAll({
+            where,
+            include :[
+                {
+                    model:OrderItem,
+                    as:'items',
+                    include:[
+                        {
+                            model:Product,
+                            as:'product',
+                            attributes:['id','name','slug']
+                        }
+                    ]
+                }
+            ],
+            limit:parseInt(limit),
+            offset:parseInt(offset),
+            order:[['created_at','DESC']]
+        });
+
+        res.json({
+            orders,
+            pagination:{
+                total: count,
+                page:parseInt(page),
+                limit:parseInt(limit),
+                pages:Math.ceil(count/limit)
+            }
+        });
     } catch (error){
         console.error('Error in getOrderHistory:',error);
         res.status(500).json({error:'Failef to fetch order history'});
