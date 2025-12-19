@@ -184,6 +184,14 @@ const getOrderTracking = async (req,res) => {
             return res.status(404).json({error:'Order not found'});
         }
 
+        const tracking = await OrderTracking.findOne({
+            where: { orderId:id }
+        });
+        
+        if(!tracking){
+            return res.status(404).json({error:'Tracking information not available yet'});
+        }
+
         
     } catch(error){
         console.error('Error in getOrderTracking:',error);
