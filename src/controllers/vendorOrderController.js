@@ -244,7 +244,7 @@ const shipOrder = async (req, res) => {
       });
     }
 
-    // Update order status
+
     const oldStatus = order.status;
     await order.update({
       status: 'shipped',
@@ -289,5 +289,67 @@ const shipOrder = async (req, res) => {
     await transaction.rollback();
     console.error('Error in shipOrder:', error);
     res.status(500).json({ error: 'Failed to ship order' });
+  }
+};
+
+
+const markAsDelivered = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const vendorId = req.user.userId;
+
+    const order = await Order.findOne({
+      where: { id },
+      include: [
+        {
+          model: OrderItem,
+          as: 'items',
+          where: { vendorId },
+          required: true
+        },
+        {
+          model: User,
+          as: 'user'
+        }
+      ]
+    });
+
+    if (!order) {
+      return res.status(404).json({ error: 'Order not found' });
+    }
+
+    if (order.status !== 'shipped') {
+      return res.status(400).json({
+        error: 'Order must be in shipped status',
+        currentStatus: order.status
+      });
+    }
+
+    const oldStatus = order.status;
+    await order.update({
+      status: 'delivered',
+      deliveredAt: new Date()
+    });
+
+    await recordStatusChange(id, oldStatus, 'delivered', vendorId, 'Vendor confirmed delivery');
+
+    await OrderTracking.update(
+      { trackingStatus: 'delivered' },
+      { where: { orderId: id } }
+    );
+
+    emailService.sendOrderDeliveredNotification(
+      order.user.email,
+      order.user.firstName,
+      order.orderNumber
+    ).catch(err => console.error('Email send failed:', err));
+
+    res.json({
+      message: 'Order marked as delivered',
+      order
+    });
+  } catch (error) {
+    console.error('Error in markAsDelivered:', error);
+    res.status(500).json({ error: 'Failed to mark order as delivered' });
   }
 };
