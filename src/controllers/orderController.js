@@ -320,6 +320,13 @@ const requestReturn = async (req,res) => {
 
 const addCustomerNote = async (req,res) => {
     try{
+        const { id } = req.params;
+        const { content } = req.body;
+        const userId = req.user.userId;
+
+        if(!content){
+            return res.status(400).json({error:'Note content is required'});
+        }
         
     }catch(error){  
         console.error('Error in addCustomerNote:',error);
