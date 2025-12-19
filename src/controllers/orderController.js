@@ -277,6 +277,10 @@ const requestReturn = async (req,res) => {
         if (order.status !== 'delivered') {
         return res.status(400).json({ error: 'Only delivered orders can be returned' });
         }
+
+        const daysSinceDelivery = Math.floor(
+        (new Date() - new Date(order.deliveredAt)) / (1000 * 60 * 60 * 24)
+        );
         
     } catch(error){
         console.error('Error in requestReturn:',error);
