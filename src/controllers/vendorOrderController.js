@@ -86,3 +86,13 @@ const getVendorOrders = async (req,res) => {
         res.status(500).json({error:'Failed to fetch vendor orders'});
     }
 };
+
+
+const getVendorOrderById = async (req,res) => {
+    try{
+        
+    }catch(error){
+        console.error('Error in getVendorOrderById:',error);
+        res.status(500).json({error:'Failed to fetch the order'});
+    }
+};
