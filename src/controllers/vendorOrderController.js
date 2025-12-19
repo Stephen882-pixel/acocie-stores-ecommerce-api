@@ -442,3 +442,103 @@ const addVendorNote = async (req, res) => {
     res.status(500).json({ error: 'Failed to add note' });
   }
 };
+
+const getVendorDashboardStats = async (req, res) => {
+  try {
+    const vendorId = req.user.userId;
+
+    const totalOrders = await OrderItem.count({
+      where: { vendorId },
+      distinct: true,
+      col: 'orderId'
+    });
+
+
+    const revenueData = await OrderItem.findAll({
+      where: { vendorId },
+      include: [
+        {
+          model: Order,
+          as: 'order',
+          where: { status: 'delivered' },
+          attributes: []
+        }
+      ],
+      attributes: [
+        [sequelize.fn('SUM', sequelize.col('subtotal')), 'totalRevenue']
+      ],
+      raw: true
+    });
+
+    const totalRevenue = parseFloat(revenueData[0]?.totalRevenue || 0);
+
+    const pendingData = await OrderItem.findAll({
+      where: { vendorId },
+      include: [
+        {
+          model: Order,
+          as: 'order',
+          where: {
+            status: {
+              [Op.in]: ['pending', 'confirmed', 'processing', 'shipped']
+            }
+          },
+          attributes: []
+        }
+      ],
+      attributes: [
+        [sequelize.fn('SUM', sequelize.col('subtotal')), 'pendingRevenue']
+      ],
+      raw: true
+    });
+
+    const pendingRevenue = parseFloat(pendingData[0]?.pendingRevenue || 0);
+
+    const ordersByStatus = await Order.findAll({
+      include: [
+        {
+          model: OrderItem,
+          as: 'items',
+          where: { vendorId },
+          attributes: [],
+          required: true
+        }
+      ],
+      attributes: [
+        'status',
+        [sequelize.fn('COUNT', sequelize.fn('DISTINCT', sequelize.col('Order.id'))), 'count']
+      ],
+      group: ['status'],
+      raw: true
+    });
+
+
+    const recentOrders = await Order.findAll({
+      include: [
+        {
+          model: OrderItem,
+          as: 'items',
+          where: { vendorId },
+          required: true
+        }
+      ],
+      limit: 5,
+      order: [['createdAt', 'DESC']],
+      distinct: true
+    });
+
+    res.json({
+      totalOrders,
+      totalRevenue,
+      pendingRevenue,
+      ordersByStatus: ordersByStatus.map(o => ({
+        status: o.status,
+        count: parseInt(o.count)
+      })),
+      recentOrders
+    });
+  } catch (error) {
+    console.error('Error in getVendorDashboardStats:', error);
+    res.status(500).json({ error: 'Failed to fetch vendor statistics' });
+  }
+};
