@@ -11,7 +11,7 @@ const {
   User,
   sequelize
 } = require('../models');
-const { Op } = require('sequelize');
+const { Op, or } = require('sequelize');
 const emailService = require('../services/emailService');
 const models = require('../models');
 
@@ -147,7 +147,26 @@ const getOrderById = async (req,res) => {
 
 const getOrderByNumber = async (req,res) => {
     try{
-        
+        const { orderNumber } = req.params;
+        const userId = req.user.userId;
+
+        const order = await Order.findOne({
+            where:{ orderNumber,userId },
+            include:[
+                {
+                    model:OrderItem,
+                    as:'items',
+                    include:[{ model:Product,as:'product' }]
+                },
+                { model:Address,as:'shippingAddress' },
+                { model:OrderTracking,as:'tracking',required:false }
+            ]
+        });
+        if(!order){
+            return res.status(404).json({error:'Order not found'});
+        }
+
+        res.json({ order });
     } catch(error){
         console.error('Error in getOrderByNumber:',error);
         res.status(500).json({error:'Failed to fetch order'});
