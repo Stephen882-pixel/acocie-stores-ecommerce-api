@@ -258,3 +258,12 @@ const updateOrderStatus = async (req,res) => {
         res.status(500).json({error:'Failed to update order status'});
     }
 };
+
+const confirmOrder = async (req,res) => {
+    try{
+
+    }catch(error){
+        console.error('Error in confirmOrder:',error);
+        res.status(500).json({error:'Failed to confirm order'});
+    }
+};
