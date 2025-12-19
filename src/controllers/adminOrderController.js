@@ -273,9 +273,36 @@ const confirmOrder = async (req,res) => {
             return res.status(404).json({error:'Order not found'});
         }
 
-        
+        if(order.status !== 'pending'){
+            return res.status(400).json({
+                error:'only pending orders can be confirmed',
+                currentStatus:order.status
+            });
+        }
+
+        const oldStatus = order.status;
+        await Order.update({
+            status:'confirmed',
+            paymentStatus:'paid',
+            paymentReference,
+            confirmed_at:new Date()
+        });
+
+        await recordStatusChange(id, oldStatus, 'confirmed', adminId, 'Payment verified by admin');
+
+        emailService.sendOrderConfirmedNotification(
+            order.use.email,
+            order.user.firstName,
+            order.orderNumber
+        ).catch(err => console.error('Email send failed:',err));
+
+        res.json({
+            message:'Order confirmed successfully',
+            order
+        });
     }catch(error){
         console.error('Error in confirmOrder:',error);
         res.status(500).json({error:'Failed to confirm order'});
     }
 };
+
