@@ -194,3 +194,100 @@ const acceptOrder = async (req,res) => {
         res.status(500).json({error:'Failed to accept the order'});
     }
 };
+
+const shipOrder = async (req, res) => {
+  const transaction = await sequelize.transaction();
+
+  try {
+    const { id } = req.params;
+    const {
+      carrier,
+      trackingNumber,
+      trackingUrl,
+      estimatedDelivery
+    } = req.body;
+    const vendorId = req.user.userId;
+
+    if (!carrier || !trackingNumber) {
+      return res.status(400).json({
+        error: 'Carrier and tracking number are required'
+      });
+    }
+
+    const order = await Order.findOne({
+      where: { id },
+      include: [
+        {
+          model: OrderItem,
+          as: 'items',
+          where: { vendorId },
+          required: true
+        },
+        {
+          model: User,
+          as: 'user'
+        }
+      ],
+      transaction
+    });
+
+    if (!order) {
+      await transaction.rollback();
+      return res.status(404).json({ error: 'Order not found' });
+    }
+
+    if (order.status !== 'processing') {
+      await transaction.rollback();
+      return res.status(400).json({
+        error: 'Order must be in processing status to ship',
+        currentStatus: order.status
+      });
+    }
+
+    // Update order status
+    const oldStatus = order.status;
+    await order.update({
+      status: 'shipped',
+      shippedAt: new Date()
+    }, { transaction });
+
+
+    await OrderTracking.create({
+      orderId: id,
+      carrier,
+      trackingNumber,
+      trackingUrl,
+      estimatedDelivery: estimatedDelivery ? new Date(estimatedDelivery) : null,
+      trackingStatus: 'in_transit'
+    }, { transaction });
+
+
+    await recordStatusChange(
+      id,
+      oldStatus,
+      'shipped',
+      vendorId,
+      `Shipped via ${carrier}, tracking: ${trackingNumber}`,
+      transaction
+    );
+
+    await transaction.commit();
+
+    emailService.sendOrderShippedNotification(
+      order.user.email,
+      order.user.firstName,
+      order.orderNumber,
+      trackingNumber,
+      carrier
+    ).catch(err => console.error('Email send failed:', err));
+
+    res.json({
+      message: 'Order marked as shipped',
+      order
+    });
+  } catch (error) {
+    await transaction.rollback();
+    console.error('Error in shipOrder:', error);
+    res.status(500).json({ error: 'Failed to ship order' });
+  }
+};
