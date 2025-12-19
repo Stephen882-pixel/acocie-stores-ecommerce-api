@@ -202,7 +202,13 @@ const getOrderTracking = async (req,res) => {
 
 const requestOrderCancellation = async (req,res) => {
     try{
-        
+        const { id } = req.params;
+        const { reason } = req.body;
+        const  userId  = req.user.userId;
+
+        if(!reason){
+            return res.status(400).json({error:'Cancellation reason is required'});
+        }
     }catch(error){
         console.error('Error in requestOrderCancellation:',error);
         res.status(500).json({error:'Failed to submit the cancellation request'});
