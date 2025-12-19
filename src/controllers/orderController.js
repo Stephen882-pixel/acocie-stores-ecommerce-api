@@ -273,6 +273,10 @@ const requestReturn = async (req,res) => {
         if (!order) {
         return res.status(404).json({ error: 'Order not found' });
         }
+
+        if (order.status !== 'delivered') {
+        return res.status(400).json({ error: 'Only delivered orders can be returned' });
+        }
         
     } catch(error){
         console.error('Error in requestReturn:',error);
