@@ -398,3 +398,47 @@ const updateTracking = async (req, res) => {
     res.status(500).json({ error: 'Failed to update tracking' });
   }
 };
+
+const addVendorNote = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { content, isVisibleToCustomer = true } = req.body;
+    const vendorId = req.user.userId;
+
+    if (!content) {
+      return res.status(400).json({ error: 'Note content is required' });
+    }
+
+    const order = await Order.findOne({
+      where: { id },
+      include: [
+        {
+          model: OrderItem,
+          as: 'items',
+          where: { vendorId },
+          required: true
+        }
+      ]
+    });
+
+    if (!order) {
+      return res.status(404).json({ error: 'Order not found' });
+    }
+
+    const note = await OrderNote.create({
+      orderId: id,
+      userId: vendorId,
+      noteType: 'vendor_note',
+      content,
+      isVisibleToCustomer
+    });
+
+    res.status(201).json({
+      message: 'Note added successfully',
+      note
+    });
+  } catch (error) {
+    console.error('Error in addVendorNote:', error);
+    res.status(500).json({ error: 'Failed to add note' });
+  }
+};
