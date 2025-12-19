@@ -299,7 +299,7 @@ const requestReturn = async (req,res) => {
         if (existing) {
         return res.status(400).json({ error: 'Return request already pending' });
         }
-        
+
         const returnRequest = await OrderCancellation.create({
         orderId: id,
         type: 'return',
@@ -315,5 +315,14 @@ const requestReturn = async (req,res) => {
     } catch(error){
         console.error('Error in requestReturn:',error);
         res.status(500).json({error:'Failed to submit return request'});
+    }
+};
+
+const addCustomerNote = async (req,res) => {
+    try{
+        
+    }catch(error){  
+        console.error('Error in addCustomerNote:',error);
+        res.status(500).json({error:'Failed to add note'});
     }
 };
