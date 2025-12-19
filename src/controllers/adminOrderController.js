@@ -107,9 +107,66 @@ const getAllOrders = async (req,res) => {
 
 const getOrderById = async (req,res) => {
     try{
-        
+        const { id } = req.params;
+
+        const order = await Order.findByPk(id,{
+            include:[
+                {
+                    model:OrderItem,
+                    as:'items',
+                    include:[
+                        {
+                            model:Product,
+                            as:'product'
+                        },
+                        {
+                            model:User,
+                            as:'vendor',
+                            attributes:['id','firstName','lastName','email']
+                        }
+                    ]
+                },
+                {
+                    model:User,
+                    as:'user',
+                    attributes:['id','firstName','lastName','email','phone']
+                },
+                {
+                    model:Address,
+                    as:'shippingAddress'
+                },
+                {
+                    model:Address,
+                    as:'billingAddress'
+                },
+                {
+                    model:OrderTracking,
+                    as:'tracking',
+                    required:false
+                },
+                {
+                    model:OrderNote,
+                    as:'notes',
+                    include:[
+                        {
+                            model:User,
+                            as:'user',
+                            attributes:['id','firstName','lastName','role']
+                        }
+                    ],
+                    order:[['created_at','DESC']]
+                }
+            ]
+        });
+
+        if(!order){
+            return res.status(404).json({error:'Order not found'});
+        }
+
+        res.json({ order });
     } catch(error){
         console.error('Error in getOrderById:',error);
         res.json({error:'Failed to fetch order'});
     }
 };
+
