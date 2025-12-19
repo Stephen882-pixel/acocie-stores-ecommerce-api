@@ -327,6 +327,12 @@ const addCustomerNote = async (req,res) => {
         if(!content){
             return res.status(400).json({error:'Note content is required'});
         }
+
+        const order = await Order.findOne({ where: {id,userId} });
+
+        if(!order){
+            return res.status(404).json({error:'Order not found'});
+        }
         
     }catch(error){  
         console.error('Error in addCustomerNote:',error);
