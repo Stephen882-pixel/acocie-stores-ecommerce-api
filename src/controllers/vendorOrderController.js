@@ -137,3 +137,12 @@ const getVendorOrderById = async (req,res) => {
     }
 };
 
+
+const acceptOrder = async (req,res) => {
+    try{
+
+    }catch(error){
+        console.error('Error from acceptOrder:',error);
+        res.status(500).json({error:'Failed to accept the order'});
+    }
+};
