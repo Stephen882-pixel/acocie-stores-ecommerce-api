@@ -175,7 +175,10 @@ const getOrderByNumber = async (req,res) => {
 
 const getOrderTracking = async (req,res) => {
     try{
-        
+        const { id } = req.params;
+        const userId = req.user.userId;
+
+        const order = await Order.findOne({ where:{ id,userId } });
     } catch(error){
         console.error('Error in getOrderTracking:',error);
         res.status(500).json({error:'Failed to fetch tracking informations'});
