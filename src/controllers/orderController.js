@@ -257,3 +257,12 @@ const requestOrderCancellation = async (req,res) => {
         res.status(500).json({error:'Failed to submit the cancellation request'});
     }
 };
+
+const requestReturn = async (req,res) => {
+    try{
+        
+    } catch(error){
+        console.error('Error in requestReturn:',error);
+        res.status(500).json({error:'Failed to submit return request'});
+    }
+};
