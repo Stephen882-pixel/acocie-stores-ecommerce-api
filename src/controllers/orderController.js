@@ -281,6 +281,24 @@ const requestReturn = async (req,res) => {
         const daysSinceDelivery = Math.floor(
         (new Date() - new Date(order.deliveredAt)) / (1000 * 60 * 60 * 24)
         );
+
+        if (daysSinceDelivery > 14) {
+        return res.status(400).json({
+            error: 'Return window has expired (14 days from delivery)'
+        });
+        }
+
+        const existing = await OrderCancellation.findOne({
+        where: {
+            orderId: id,
+            type: 'return',
+            status: 'pending'
+        }
+        });
+
+        if (existing) {
+        return res.status(400).json({ error: 'Return request already pending' });
+        }
         
     } catch(error){
         console.error('Error in requestReturn:',error);
