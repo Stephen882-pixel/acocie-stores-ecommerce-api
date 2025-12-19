@@ -353,3 +353,48 @@ const markAsDelivered = async (req, res) => {
     res.status(500).json({ error: 'Failed to mark order as delivered' });
   }
 };
+
+const updateTracking = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { currentLocation, trackingStatus, estimatedDelivery } = req.body;
+    const vendorId = req.user.userId;
+    const order = await Order.findOne({
+      where: { id },
+      include: [
+        {
+          model: OrderItem,
+          as: 'items',
+          where: { vendorId },
+          required: true
+        }
+      ]
+    });
+
+    if (!order) {
+      return res.status(404).json({ error: 'Order not found' });
+    }
+
+    const tracking = await OrderTracking.findOne({ where: { orderId: id } });
+
+    if (!tracking) {
+      return res.status(404).json({ error: 'Tracking information not found' });
+    }
+
+
+    await tracking.update({
+      currentLocation: currentLocation || tracking.currentLocation,
+      trackingStatus: trackingStatus || tracking.trackingStatus,
+      estimatedDelivery: estimatedDelivery || tracking.estimatedDelivery,
+      lastUpdated: new Date()
+    });
+
+    res.json({
+      message: 'Tracking information updated',
+      tracking
+    });
+  } catch (error) {
+    console.error('Error in updateTracking:', error);
+    res.status(500).json({ error: 'Failed to update tracking' });
+  }
+};
