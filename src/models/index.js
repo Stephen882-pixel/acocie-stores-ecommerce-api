@@ -19,6 +19,11 @@ const CartItemModel = require('./CartItem');
 const OrderModel = require('./Order');
 const OrderItemModel = require('./OrderItem');
 
+const OrderStatusHistoryModel = require('./OrderStatusHistory');
+const OrderTrackingModel = require('./OrderTracking');
+const OrderCancellationModel = require('./OrderCancellation');
+const OrderNoteModel = require('./OrderNote');
+
 const User = UserModel(sequelize);
 const OTPCode = OTPCodeModel(sequelize);
 const RefreshToken = RefreshTokenModel(sequelize);
@@ -35,6 +40,11 @@ const Cart = CartModel(sequelize);
 const CartItem = CartItemModel(sequelize);
 const Order = OrderModel(sequelize);
 const OrderItem = OrderItemModel(sequelize);
+
+const OrderStatusHistory = OrderStatusHistoryModel(sequelize);
+const OrderTracking = OrderTrackingModel(sequelize);
+const OrderCancellation = OrderCancellationModel(sequelize);
+const OrderNote = OrderNoteModel(sequelize);
 
 
 
@@ -53,8 +63,13 @@ const models = {
   Cart,
   CartItem,
   Order,
-  OrderItem
+  OrderItem,
+  OrderStatusHistory,
+  OrderTracking,
+  OrderCancellation,
+  OrderNote
 };
+
 
 Object.keys(models).forEach(modelName => {
   if (models[modelName].associate) {
