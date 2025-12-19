@@ -172,3 +172,12 @@ const getOrderByNumber = async (req,res) => {
         res.status(500).json({error:'Failed to fetch order'});
     }
 };
+
+const getOrderTracking = async (req,res) => {
+    try{
+        
+    } catch(error){
+        console.error('Error in getOrderTracking:',error);
+        res.status(500).json({error:'Failed to fetch tracking informations'});
+    }
+};
