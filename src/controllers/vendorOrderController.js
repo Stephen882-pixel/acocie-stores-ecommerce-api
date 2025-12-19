@@ -140,7 +140,37 @@ const getVendorOrderById = async (req,res) => {
 
 const acceptOrder = async (req,res) => {
     try{
+        const { id } = req.params;
 
+        const vendorId = req.user.userId;
+
+        const order = await Order.findOne({
+        where: { id },
+        include: [
+            {
+            model: OrderItem,
+            as: 'items',
+            where: { vendorId },
+            required: true
+            },
+            {
+            model: User,
+            as: 'user'
+            }
+        ]
+        });
+
+        if (!order) {
+        return res.status(404).json({ error: 'Order not found' });
+        }
+
+        if (order.status !== 'confirmed') {
+        return res.status(400).json({
+            error: 'Order must be in confirmed status to accept',
+            currentStatus: order.status
+        });
+        }
+        
     }catch(error){
         console.error('Error from acceptOrder:',error);
         res.status(500).json({error:'Failed to accept the order'});
