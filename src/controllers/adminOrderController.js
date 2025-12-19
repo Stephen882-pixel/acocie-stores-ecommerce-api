@@ -166,7 +166,15 @@ const getOrderById = async (req,res) => {
         res.json({ order });
     } catch(error){
         console.error('Error in getOrderById:',error);
-        res.json({error:'Failed to fetch order'});
+        res.status(500).json({ error: 'Failed to fetch order' });
     }
 };
 
+const updateOrderStatus = async (req,res) => {
+    try{
+        
+    } catch(error){
+        console.error('Error in updateOrderStatus:',error);
+        res.status(500).json({error:'Failed to update order status'});
+    }
+};
