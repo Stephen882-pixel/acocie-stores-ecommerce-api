@@ -186,6 +186,70 @@ const updateOrderStatus = async (req,res) => {
         if(!validStatuses){
             return res.status(400).json({error:'Invalid status'});
         }
+
+        const order = await Order.findByPk({
+            include:[
+                {
+                    model:User,
+                    as:'user'
+                },
+                {
+                    model:OrderItem,
+                    as:'items',
+                    include:[{ model:Product,as:'product' }]
+                }
+            ],
+            transaction
+        });
+
+        if(!order){
+            await transaction.rollback();
+            return res.status(404).json({error:'Order not found'});
+        }
+
+        const oldStatus = order.status;
+
+        if(status === 'cancelled' && oldStatus === 'cancelled'){
+            for(const item of order.items){
+                const inventory = await Inventory.findOne({
+                    where: { productId:item.productId },
+                    transaction
+                });
+
+                if(inventory){
+                    await inventory.update({
+                        reservedStock:inventory.reservedStock - item.quantity,
+                        availableStock: inventory.availableStock + item.quantity
+                    },{transaction});
+                }
+            }
+            order.cancelled_at = new Date();
+        }
+
+        if(status === 'confirmed' && oldStatus === 'pending'){
+            order.confirmed_at = new Date();
+        }
+
+        if(status === 'shipped' && oldStatus !== 'shipped'){
+            order.shipped_at = new Date();
+        }
+
+        if(status === 'delivered' && oldStatus !== 'delivered'){
+            order.delivered_at = new Date();
+        }
+
+        await order.update({ status }, { transaction });
+        await recordStatusChange(id,oldStatus,status,adminId,reason || 'Admin update');
+
+        await transaction.commit();
+
+        emailService.sendOrderStatusUpdateNotification(
+            order.user.email,
+            order.user.firstName,
+            status
+        ).catch(err => console.error('Email send failed:',err));
+
+        
     } catch(error){
         console.error('Error in updateOrderStatus:',error);
         res.status(500).json({error:'Failed to update order status'});
