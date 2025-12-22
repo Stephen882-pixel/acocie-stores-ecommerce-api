@@ -368,9 +368,18 @@ const getCancellationRequests = async (req,res) => {
 
 const processCancellation = async (req,res) => {
     try{
+        const { id } = req.params;
+        const { action, adminNotes } = req.body; // action: 'approve' or 'reject'
+        const adminId = req.user.userId;
+
+        if(!['approve','reject'].includes(action)){
+            return res.status(400).json({error:'Action must be approve or reject'});
+        }
+
         
+
     } catch (error){
         console.error('Error in proccessCancellation:',error);
-        res.status(500).json({error:'Failed to procces cancellation'});
+        res.status(500).json({error:'Failed to procces cancellation'})
     }
 };
