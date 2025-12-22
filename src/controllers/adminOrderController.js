@@ -432,6 +432,19 @@ const processCancellation = async (req,res) => {
                 adminId,
                 `Cancellation approved: ${cancellation.reason}`
             );
+
+            await cancellation.update({
+                status:'approved',
+                processedByUserId:adminId,
+                adminNotes,
+                processed_at:new Date(),
+                refundAmount:order.paymentStatus === 'paid' ? order.totalAmount: 0,
+                refundMethod:'original_payment'
+            },{transaction});
+
+            await transaction.commit();
+
+            
         }
 
     } catch (error){
