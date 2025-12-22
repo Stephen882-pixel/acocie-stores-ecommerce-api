@@ -643,3 +643,31 @@ const processRefund = async (req, res) => {
     res.status(500).json({ error: 'Failed to process refund' });
   }
 };
+
+const addAdminNote = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { content, isVisibleToCustomer = false } = req.body;
+    const adminId = req.user.userId;
+
+    if (!content) {
+      return res.status(400).json({ error: 'Note content is required' });
+    }
+
+    const note = await OrderNote.create({
+      orderId: id,
+      userId: adminId,
+      noteType: 'admin_note',
+      content,
+      isVisibleToCustomer
+    });
+
+    res.status(201).json({
+      message: 'Admin note added successfully',
+      note
+    });
+  } catch (error) {
+    console.error('Error in addAdminNote:', error);
+    res.status(500).json({ error: 'Failed to add note' });
+  }
+};
