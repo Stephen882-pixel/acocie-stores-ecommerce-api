@@ -513,3 +513,11 @@ const getReturnRequests = async (req,res) => {
     }
 };
 
+const processReturn = async (req,res) => {
+    try{
+        
+    }catch(error){
+        console.error('Error in processReturn:',error);
+        res.status(500).json({error:'Failed to process return'});
+    }
+};
