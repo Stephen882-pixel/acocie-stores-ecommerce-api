@@ -671,3 +671,78 @@ const addAdminNote = async (req, res) => {
     res.status(500).json({ error: 'Failed to add note' });
   }
 };
+
+
+const getAdminDashboardStats = async (req, res) => {
+  try {
+    const totalOrders = await Order.count();
+
+    const totalRevenue = await Order.sum('totalAmount', {
+      where: { paymentStatus: 'paid' }
+    });
+
+    const startOfDay = new Date();
+    startOfDay.setHours(0, 0, 0, 0);
+    const ordersToday = await Order.count({
+      where: {
+        createdAt: { [Op.gte]: startOfDay }
+      }
+    });
+
+    const revenueToday = await Order.sum('totalAmount', {
+      where: {
+        paymentStatus: 'paid',
+        createdAt: { [Op.gte]: startOfDay }
+      }
+    });
+
+
+    const ordersByStatus = await Order.findAll({
+      attributes: [
+        'status',
+        [sequelize.fn('COUNT', sequelize.col('id')), 'count']
+      ],
+      group: ['status'],
+      raw: true
+    });
+
+    const ordersByPaymentStatus = await Order.findAll({
+      attributes: [
+        'paymentStatus',
+        [sequelize.fn('COUNT', sequelize.col('id')), 'count']
+      ],
+      group: ['paymentStatus'],
+      raw: true
+    });
+
+    const pendingCancellations = await OrderCancellation.count({
+      where: { type: 'cancellation', status: 'pending' }
+    });
+
+    const pendingReturns = await OrderCancellation.count({
+      where: { type: 'return', status: 'pending' }
+    });
+
+    res.json({
+      totalOrders,
+      totalRevenue: totalRevenue || 0,
+      ordersToday,
+      revenueToday: revenueToday || 0,
+      ordersByStatus: ordersByStatus.map(o => ({
+        status: o.status,
+        count: parseInt(o.count)
+      })),
+      ordersByPaymentStatus: ordersByPaymentStatus.map(o => ({
+        paymentStatus: o.paymentStatus,
+        count: parseInt(o.count)
+      })),
+      pendingActions: {
+        cancellations: pendingCancellations,
+        returns: pendingReturns
+      }
+    });
+  } catch (error) {
+    console.error('Error in getAdminDashboardStats:', error);
+    res.status(500).json({ error: 'Failed to fetch dashboard stats' });
+  }
+};
