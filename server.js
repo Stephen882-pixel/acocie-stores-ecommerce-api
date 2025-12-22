@@ -9,14 +9,14 @@ const { sequelize, testConnection } = require('./src/config/database');
 const authRoutes = require('./src/routes/authRoutes');
 const userRoutes = require('./src/routes/userRoutes');
 const adminRoutes = require('./src/routes/adminRoutes');
-
-
-
 const productRoutes = require('../acocie_stores/src/routes/productRoutes');
 const categoryRoutes = require('../acocie_stores/src/routes/categoryRoutes');
-
 const cartRoutes = require('./src/routes/cartRoutes');
 const checkoutRoutes = require('./src/routes/checkoutRoutes');
+
+const orderRoutes = require('./src/routes/orderRoutes');
+const vendorOrderRoutes = require('./src/routes/vendorOrderRoutes');
+const adminOrderRoutes = require('./src/routes/adminOrderRoutes');
 
 const app = express();
 
@@ -74,7 +74,10 @@ app.get('/', (req, res) => {
       products: '/api/v1/products',
       categories: '/api/v1/categories',
       cart: '/api/v1/cart',              
-      checkout: '/api/v1/checkout',     
+      checkout: '/api/v1/checkout',   
+      orders: '/api/v1/orders',              
+      vendor: '/api/v1/vendor',              
+      adminOrders: '/api/v1/admin-orders',   
       health: '/health'
     }
   });
@@ -89,6 +92,10 @@ app.use('/api/v1/categories',categoryRoutes);
 
 app.use('/api/v1/cart',cartRoutes);
 app.use('/api/v1/checkout',checkoutRoutes);
+
+app.use('/api/v1/orders',orderRoutes);
+app.use('/api/v1/vendor',vendorOrderRoutes);
+app.use('/api/v1/admin-orders',adminOrderRoutes);
 
 app.use((req, res) => {
   res.status(404).json({ 
