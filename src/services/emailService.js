@@ -199,12 +199,38 @@ const sendOrderConfirmation = async (email, firstName, orderNumber, totalAmount)
     return false;
   }
 };
+const sendOrderConfirmedNotification = async (email, firstName, orderNumber) => {
+  const mailOptions = {
+    from: process.env.EMAIL_FROM,
+    to: email,
+    subject: `Order Confirmed - ${orderNumber}`,
+    html: `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+        <h1 style="color: #2563eb;">Acocie Stores</h1>
+        <h2>Order Confirmed!</h2>
+        <p>Hi ${firstName},</p>
+        <p>Your payment has been verified and your order <strong>${orderNumber}</strong> is confirmed!</p>
+        <p>We'll notify you once your items are being prepared for shipment.</p>
+      </div>
+    `
+  };
+
+  try {
+    await transporter.sendMail(mailOptions);
+    console.log(`✓ Order confirmed email sent for ${orderNumber}`);
+    return true;
+  } catch (error) {
+    console.error('✗ Error sending order confirmed email:', error.message);
+    return false;
+  }
+};
 
 module.exports = {
   sendSignUpOTP,
   sendPasswordResetOTP,
   sendWelcomeEmail,
-  sendOrderConfirmation
+  sendOrderConfirmation,
+  sendOrderConfirmedNotification
 };
 
 
