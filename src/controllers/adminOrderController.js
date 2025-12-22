@@ -541,9 +541,36 @@ const processReturn = async (req,res) => {
             return res.status(400).json({error:'Request already processed'});
         }
 
-        
+        if(action === 'approved'){
+            await returnRequest.update({
+                status:'approved',
+                processedByUserId:adminId,
+                adminNotes,
+                refundAmount: refundAmount || returnRequest.order.totalAmount,
+                refundMethod:'original_payment',
+                processed_at:new Date()
+            });
+
+            res.json({
+                message:'Return request approved. Awaiting customer to ship back items.',
+                returnRequest
+            });
+        } else {
+            await returnRequest.update({
+                status:'rejected',
+                processedByUserId:adminId,
+                adminNotes,
+                processed_at:new Date()
+            });
+
+            res.json({
+                message:'Return requested rejected',
+                returnRequest
+            });
+        }
     }catch(error){
         console.error('Error in processReturn:',error);
         res.status(500).json({error:'Failed to process return'});
     }
 };
+
