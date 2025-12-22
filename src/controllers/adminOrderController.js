@@ -376,6 +376,27 @@ const processCancellation = async (req,res) => {
             return res.status(400).json({error:'Action must be approve or reject'});
         }
 
+        const cancellation = await OrderCancellation.findByPk(id,{
+            include:[
+                {
+                    model:Order,
+                    as:'order',
+                    include:[
+                        {
+                            model:OrderItem,
+                            as:'items',
+                            include:[{model:Product,as:'product'}]
+                        }
+                    ]
+                }
+            ],
+            transaction
+        });
+        if(!cancellation){
+            await transaction.rollback();
+            return res.status(404).json({error:'cancellation request not found'});
+        }
+
         
 
     } catch (error){
