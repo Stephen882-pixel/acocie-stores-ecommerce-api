@@ -523,6 +523,24 @@ const processReturn = async (req,res) => {
             return res.status(400).json({error:'Action must be approve or reject'});
         }
 
+        const returnRequest = await OrderCancellation.findByPk(id,{
+            include:[
+                {
+                    model:Order,
+                    as:'order',
+                    include:[{model:User,as:'user'}]
+                }
+            ]
+        });
+
+        if(!returnRequest){
+            return res.status(404).json({error:'Return request not found'});
+        }
+
+        if(returnRequest.status === 'pending'){
+            return res.status(400).json({error:'Request already processed'});
+        }
+
         
     }catch(error){
         console.error('Error in processReturn:',error);
