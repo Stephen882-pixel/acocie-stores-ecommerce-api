@@ -114,7 +114,7 @@ const getOrderById = async (req,res) => {
                 },
                 {
                     model:OrderNote,
-                    as:'notes',
+                    as:'orderNotes',
                     where:{
                         [Op.or]:[
                             { isVisibleToCustomer:true },

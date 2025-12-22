@@ -167,7 +167,7 @@ module.exports = (sequelize) => {
     });
     Order.hasMany(models.OrderNote, {
       foreignKey: 'orderId',
-      as: 'notes',
+      as: 'orderNotes',
       onDelete: 'CASCADE'
     });
   };

@@ -53,7 +53,7 @@ module.exports = (sequelize) => {
   OrderNote.associate = (models) => {
     OrderNote.belongsTo(models.Order, {
       foreignKey: 'orderId',
-      as: 'order'
+      as: 'notes'
     });
 
     OrderNote.belongsTo(models.User, {

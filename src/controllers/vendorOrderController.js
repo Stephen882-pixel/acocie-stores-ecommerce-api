@@ -5,6 +5,7 @@ const {
   OrderStatusHistory,
   OrderTracking,
   OrderNote,
+  Address,
   Product,
   User,
   sequelize
@@ -465,7 +466,7 @@ const getVendorDashboardStats = async (req, res) => {
         }
       ],
       attributes: [
-        [sequelize.fn('SUM', sequelize.col('subtotal')), 'totalRevenue']
+        [sequelize.fn('SUM', sequelize.col('OrderItem.subtotal')), 'totalRevenue']
       ],
       raw: true
     });
@@ -487,7 +488,7 @@ const getVendorDashboardStats = async (req, res) => {
         }
       ],
       attributes: [
-        [sequelize.fn('SUM', sequelize.col('subtotal')), 'pendingRevenue']
+        [sequelize.fn('SUM', sequelize.col('OrderItem.subtotal')), 'pendingRevenue']
       ],
       raw: true
     });
@@ -523,7 +524,7 @@ const getVendorDashboardStats = async (req, res) => {
         }
       ],
       limit: 5,
-      order: [['createdAt', 'DESC']],
+      order: [['created_at', 'DESC']],
       distinct: true
     });
 
