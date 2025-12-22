@@ -39,7 +39,7 @@ const getOrderHistory = async(req,res) => {
             if(endDate) where.created_at[Op.lte] = new Date(endDate);
         }
 
-        const { count, rows: orders } = await Orde.findAndCountAll({
+        const { count, rows: orders } = await Order.findAndCountAll({
             where,
             include :[
                 {
@@ -362,40 +362,50 @@ const addCustomerNote = async (req,res) => {
     }
 };
 
-const getOrderStats = async (req,res) => {
-    try{
-        const userId = req.user.userId;
+const getOrderStats = async (req, res) => {
+  try {
+    const userId = req.user.userId;
 
-        const totalOrders = await Order.count({ where: { userId } });
+    const totalOrders = await Order.count({ where: { userId } });
 
-        const totalSpent = await Order.sum('totalAmount',{
-            where: {
-                userId,
-                paymentstatus:'paid'
-            }
-        });
+    const totalSpent = await Order.sum('totalAmount', {
+      where: {
+        userId,
+        paymentStatus: 'paid'
+      }
+    });
 
-        const orderByStatus = await Order.findAll({
-            where: { userId },
-            limit:5,
-            order:[['created_at','DESC']],
-            attributes:['id','orderNumber','status','totalAmount','created_at']
-        });
+    const ordersByStatus = await Order.findAll({
+      where: { userId },
+      attributes: [
+        'status',
+        [sequelize.fn('COUNT', sequelize.col('id')), 'count']
+      ],
+      group: ['status']
+    });
 
-        res.json({
-            totalOrders,
-            totalSpent:totalSpent || 0,
-            orderByStatus:orderByStatus.map(o => ({
-                status:o.status,
-                count:parseInt(o.get('count'))
-            })),
-            recentOrders
-        });
-    } catch (error){    
-        console.error('Error in getOrderStats:',error);
-        res.status(500).json({error:'Failed to fetch order staticts'});
-    }
+    const recentOrders = await Order.findAll({
+      where: { userId },
+      limit: 5,
+      order: [['created_at', 'DESC']],
+      attributes: ['id', 'orderNumber', 'status', 'totalAmount', 'created_at']
+    });
+
+    res.json({
+      totalOrders,
+      totalSpent: totalSpent || 0,
+      ordersByStatus: ordersByStatus.map(o => ({
+        status: o.status,
+        count: parseInt(o.get('count'))
+      })),
+      recentOrders
+    });
+  } catch (error) {
+    console.error('Error in getOrderStats:', error);
+    res.status(500).json({ error: 'Failed to fetch order statistics' });
+  }
 };
+
 
 
 module.exports = {
