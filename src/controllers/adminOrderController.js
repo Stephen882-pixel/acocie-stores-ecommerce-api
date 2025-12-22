@@ -328,3 +328,13 @@ const getOrderHistory = async (req,res) => {
         res.status(500).json({error:'Failed to fetch order history'});
     }
 };
+
+
+const getCancellationRequests = async (req,res) => {
+    try{
+        
+    }catch(error){
+        console.error('Error in getCancellationRequests:',error);
+        res.status(500).json({error:'failed to fetch cancellation requests'});
+    }
+};
