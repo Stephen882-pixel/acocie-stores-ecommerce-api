@@ -332,7 +332,34 @@ const getOrderHistory = async (req,res) => {
 
 const getCancellationRequests = async (req,res) => {
     try{
-        
+        const { status = 'pending' } = req.query;
+
+        const requests = await OrderCancellation.findAll({
+            where:{
+                type:'cancellation',
+                status
+            },
+            include:[
+                {
+                    model:Order,
+                    as:'order',
+                    include:[
+                        {
+                            model:User,
+                            as:'user',
+                            attributes:['id','firstName','lastName','email']
+                        }
+                    ]
+                },
+                {
+                    model:User,
+                    as:'requestedBy',
+                    attributes:['id','firstName','lastName']
+                }
+            ],
+            order:[['requested_at','DESC']]
+        });
+        res.json({ requests })
     }catch(error){
         console.error('Error in getCancellationRequests:',error);
         res.status(500).json({error:'failed to fetch cancellation requests'});
