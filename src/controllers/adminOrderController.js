@@ -401,7 +401,25 @@ const processCancellation = async (req,res) => {
             await transaction.rollback();
             return res.status(400).json({error:'Request already processed.'});
         }
-        
+
+        if(action === 'approve'){
+            const order = cancellation.order;
+
+            for(const item of order.items){
+                const inventory = await Inventory.findOne({
+                    where: { productId:item.productId },
+                    transaction
+                });
+
+                if(inventory){
+                    await inventory.update({
+                        reservedStock:inventory.reservedStock - item.quantity,
+                        availableStock:inventory.availableStock + item.quantity
+                    },{transaction});
+                }
+            }
+            
+        }
 
     } catch (error){
         console.error('Error in proccessCancellation:',error);
