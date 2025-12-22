@@ -224,13 +224,40 @@ const sendOrderConfirmedNotification = async (email, firstName, orderNumber) => 
     return false;
   }
 };
+const sendOrderProcessingNotification = async (email, firstName, orderNumber) => {
+  const mailOptions = {
+    from: process.env.EMAIL_FROM,
+    to: email,
+    subject: `Order Processing - ${orderNumber}`,
+    html: `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+        <h1 style="color: #2563eb;">Acocie Stores</h1>
+        <h2>Order is Being Prepared</h2>
+        <p>Hi ${firstName},</p>
+        <p>Great news! Your order <strong>${orderNumber}</strong> is now being prepared for shipment.</p>
+        <p>You'll receive another email with tracking information once your order ships.</p>
+      </div>
+    `
+  };
+
+  try {
+    await transporter.sendMail(mailOptions);
+    console.log(`✓ Order processing email sent for ${orderNumber}`);
+    return true;
+  } catch (error) {
+    console.error('✗ Error sending order processing email:', error.message);
+    return false;
+  }
+};
+
 
 module.exports = {
   sendSignUpOTP,
   sendPasswordResetOTP,
   sendWelcomeEmail,
   sendOrderConfirmation,
-  sendOrderConfirmedNotification
+  sendOrderConfirmedNotification,
+  sendOrderProcessingNotification
 };
 
 
