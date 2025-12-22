@@ -365,3 +365,12 @@ const getCancellationRequests = async (req,res) => {
         res.status(500).json({error:'failed to fetch cancellation requests'});
     }
 };
+
+const processCancellation = async (req,res) => {
+    try{
+        
+    } catch (error){
+        console.error('Error in proccessCancellation:',error);
+        res.status(500).json({error:'Failed to procces cancellation'});
+    }
+};
