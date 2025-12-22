@@ -333,6 +333,33 @@ const sendCancellationApprovedNotification = async (email, firstName, orderNumbe
   }
 };
 
+const sendRefundProcessedNotification = async (email, firstName, orderNumber, amount) => {
+  const mailOptions = {
+    from: process.env.EMAIL_FROM,
+    to: email,
+    subject: `Refund Processed - ${orderNumber}`,
+    html: `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+        <h1 style="color: #2563eb;">Acocie Stores</h1>
+        <h2>Refund Processed</h2>
+        <p>Hi ${firstName},</p>
+        <p>Your refund for order <strong>${orderNumber}</strong> has been processed.</p>
+        <p><strong>Refund Amount:</strong> KES ${amount}</p>
+        <p>The refund will appear in your original payment method within 5-7 business days.</p>
+      </div>
+    `
+  };
+
+  try {
+    await transporter.sendMail(mailOptions);
+    console.log(`✓ Refund processed email sent for ${orderNumber}`);
+    return true;
+  } catch (error) {
+    console.error('✗ Error sending refund processed email:', error.message);
+    return false;
+  }
+};
+
 
 module.exports = {
   sendSignUpOTP,
