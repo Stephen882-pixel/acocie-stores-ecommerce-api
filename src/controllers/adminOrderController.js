@@ -308,7 +308,21 @@ const confirmOrder = async (req,res) => {
 
 const getOrderHistory = async (req,res) => {
     try{
-        
+        const { id } = req.params;
+
+        const history = await OrderStatusHistory.findAll({
+            where:{ orderId:id },
+            include:[
+                {
+                    model:User,
+                    as:'changedBy',
+                    attributes:['id','firstName','lastName','role']
+                }
+            ],
+            order:[['created_at','ASC']]
+        });
+
+        res.json({ history });
     }catch(error){
         console.error('Error in getOrderHistory:',error);
         res.status(500).json({error:'Failed to fetch order history'});
