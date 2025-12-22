@@ -746,3 +746,18 @@ const getAdminDashboardStats = async (req, res) => {
     res.status(500).json({ error: 'Failed to fetch dashboard stats' });
   }
 };
+
+module.exports = {
+  getAllOrders,
+  getOrderById,
+  updateOrderStatus,
+  confirmOrder,
+  getOrderHistory,
+  getCancellationRequests,
+  processCancellation,
+  getReturnRequests,
+  processReturn,
+  processRefund,
+  addAdminNote,
+  getAdminDashboardStats
+};
