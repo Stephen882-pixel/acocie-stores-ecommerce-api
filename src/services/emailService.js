@@ -360,6 +360,43 @@ const sendRefundProcessedNotification = async (email, firstName, orderNumber, am
   }
 };
 
+const sendOrderStatusUpdateNotification = async (email, firstName, orderNumber, newStatus) => {
+  const statusMessages = {
+    pending: 'Your order is pending',
+    confirmed: 'Your order has been confirmed',
+    processing: 'Your order is being processed',
+    shipped: 'Your order has been shipped',
+    delivered: 'Your order has been delivered',
+    cancelled: 'Your order has been cancelled',
+    refunded: 'Your order has been refunded'
+  };
+
+  const mailOptions = {
+    from: process.env.EMAIL_FROM,
+    to: email,
+    subject: `Order Update - ${orderNumber}`,
+    html: `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+        <h1 style="color: #2563eb;">Acocie Stores</h1>
+        <h2>Order Status Updated</h2>
+        <p>Hi ${firstName},</p>
+        <p>${statusMessages[newStatus] || 'Your order status has been updated'}.</p>
+        <p><strong>Order Number:</strong> ${orderNumber}</p>
+        <p><strong>New Status:</strong> ${newStatus}</p>
+      </div>
+    `
+  };
+
+  try {
+    await transporter.sendMail(mailOptions);
+    console.log(`✓ Order status update email sent for ${orderNumber}`);
+    return true;
+  } catch (error) {
+    console.error('✗ Error sending order status update email:', error.message);
+    return false;
+  }
+};
+
 
 module.exports = {
   sendSignUpOTP,
@@ -370,7 +407,9 @@ module.exports = {
   sendOrderProcessingNotification,
   sendOrderShippedNotification,
   sendOrderDeliveredNotification,
-  sendCancellationApprovedNotification
+  sendCancellationApprovedNotification,
+  sendRefundProcessedNotification,
+  sendOrderStatusUpdateNotification
 };
 
 
