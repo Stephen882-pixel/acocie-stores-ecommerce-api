@@ -444,7 +444,30 @@ const processCancellation = async (req,res) => {
 
             await transaction.commit();
 
-            
+            emailService.sendCancellationApprovedNotification(
+                order.user.email,
+                order.user.firstName,
+                order.orderNumber
+            ).catch(err => console.error('Email send failed:', err));
+
+            res.json({
+                message:'Cancellation approved, order cancelled and inventory restored',
+                cancellation
+            });
+        } else {
+            await cancellation.update({
+                status:'rejected',
+                processedByUserId:adminId,
+                adminNotes,
+                processed_at: new Date()
+            },{ transaction });
+
+            await transaction.commit();
+
+            res.json({
+                message:'Cancellation request rejected',
+                cancellation
+            });
         }
 
     } catch (error){
