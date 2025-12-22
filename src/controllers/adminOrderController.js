@@ -424,6 +424,14 @@ const processCancellation = async (req,res) => {
                 status:'cancelled',
                 cancelled_at:new Date()
             },{transaction});
+
+            await recordStatusChange(
+                order.id,
+                oldStatus,
+                'cancelled',
+                adminId,
+                `Cancellation approved: ${cancellation.reason}`
+            );
         }
 
     } catch (error){
