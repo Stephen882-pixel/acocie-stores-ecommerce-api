@@ -307,6 +307,32 @@ const sendOrderDeliveredNotification = async (email, firstName, orderNumber) => 
   }
 };
 
+const sendCancellationApprovedNotification = async (email, firstName, orderNumber) => {
+  const mailOptions = {
+    from: process.env.EMAIL_FROM,
+    to: email,
+    subject: `Cancellation Approved - ${orderNumber}`,
+    html: `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+        <h1 style="color: #2563eb;">Acocie Stores</h1>
+        <h2>Cancellation Approved</h2>
+        <p>Hi ${firstName},</p>
+        <p>Your cancellation request for order <strong>${orderNumber}</strong> has been approved.</p>
+        <p>Your refund will be processed within 5-7 business days.</p>
+      </div>
+    `
+  };
+
+  try {
+    await transporter.sendMail(mailOptions);
+    console.log(`✓ Cancellation approved email sent for ${orderNumber}`);
+    return true;
+  } catch (error) {
+    console.error('✗ Error sending cancellation approved email:', error.message);
+    return false;
+  }
+};
+
 
 module.exports = {
   sendSignUpOTP,
@@ -316,7 +342,8 @@ module.exports = {
   sendOrderConfirmedNotification,
   sendOrderProcessingNotification,
   sendOrderShippedNotification,
-  sendOrderDeliveredNotification
+  sendOrderDeliveredNotification,
+  sendCancellationApprovedNotification
 };
 
 
