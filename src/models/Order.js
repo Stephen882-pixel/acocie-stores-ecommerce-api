@@ -165,7 +165,11 @@ module.exports = (sequelize) => {
       as: 'tracking',
       onDelete: 'CASCADE'
     });
-
+    Order.hasMany(models.OrderNote, {
+      foreignKey: 'orderId',
+      as: 'notes',
+      onDelete: 'CASCADE'
+    });
   };
 
 
