@@ -574,3 +574,72 @@ const processReturn = async (req,res) => {
     }
 };
 
+
+const processRefund = async (req, res) => {
+  const transaction = await sequelize.transaction();
+
+  try {
+    const { id } = req.params;
+    const { refundAmount, refundMethod = 'original_payment', notes } = req.body;
+    const adminId = req.user.userId;
+
+    const order = await Order.findByPk(id, {
+      include: [{ model: User, as: 'user' }],
+      transaction
+    });
+
+    if (!order) {
+      await transaction.rollback();
+      return res.status(404).json({ error: 'Order not found' });
+    }
+
+    if (order.paymentStatus !== 'paid') {
+      await transaction.rollback();
+      return res.status(400).json({ error: 'Order has not been paid' });
+    }
+
+    const amount = refundAmount || order.totalAmount;
+
+
+    const oldStatus = order.status;
+    await order.update({
+      status: 'refunded',
+      paymentStatus: 'refunded'
+    }, { transaction });
+
+    await OrderCancellation.create({
+      orderId: id,
+      type: 'refund',
+      status: 'completed',
+      reason: notes || 'Refund processed by admin',
+      requestedByUserId: adminId,
+      processedByUserId: adminId,
+      refundAmount: amount,
+      refundMethod,
+      adminNotes: notes,
+      requestedAt: new Date(),
+      processedAt: new Date()
+    }, { transaction });
+
+    await recordStatusChange(id, oldStatus, 'refunded', adminId, `Refund processed: ${amount}`);
+
+    await transaction.commit();
+
+
+    emailService.sendRefundProcessedNotification(
+      order.user.email,
+      order.user.firstName,
+      order.orderNumber,
+      amount
+    ).catch(err => console.error('Email send failed:', err));
+
+    res.json({
+      message: 'Refund processed successfully',
+      order
+    });
+  } catch (error) {
+    await transaction.rollback();
+    console.error('Error in processRefund:', error);
+    res.status(500).json({ error: 'Failed to process refund' });
+  }
+};
