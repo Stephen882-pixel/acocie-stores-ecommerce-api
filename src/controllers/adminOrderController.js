@@ -397,6 +397,10 @@ const processCancellation = async (req,res) => {
             return res.status(404).json({error:'cancellation request not found'});
         }
 
+        if(cancellation.status === 'pending'){
+            await transaction.rollback();
+            return res.status(400).json({error:'Request already processed.'});
+        }
         
 
     } catch (error){
