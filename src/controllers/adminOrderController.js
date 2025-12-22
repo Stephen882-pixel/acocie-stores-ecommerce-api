@@ -14,6 +14,7 @@ const {
 } = require('../models');
 const { Op } = require('sequelize');
 const emailService = require('../services/emailService');
+const models = require('../models');
 
 
 const recordStatusChange = async (orderId, oldStatus, newStatus, userId, reason = null) => {
@@ -478,9 +479,37 @@ const processCancellation = async (req,res) => {
 
 const getReturnRequests = async (req,res) => {
     try{
-        
+        const { status = 'pending' } = req.query;
+        const requests = await OrderCancellation.findAll({
+            where:{
+                type:'return',
+                status
+            },
+            include:[
+                {
+                    model:Order,
+                    as:'order',
+                    include:[
+                        {
+                            model:User,
+                            as:'user',
+                            attributes:['id','firstName','lastName','email']
+                        }
+                    ]
+                },
+                {
+                    model:User,
+                    as:'requestedBy',
+                    attributes:['id','firstName','lastName']
+                }
+            ],
+            order:[['requested_at','DESC']]
+        });
+
+        res.json({ requests });
     }catch(error){
         console.error('Error in getReturnRequest:',error);
         res.status(500).json({error:'failed to fetch return requests'});
     }
 };
+
