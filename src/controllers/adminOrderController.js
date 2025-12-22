@@ -515,6 +515,14 @@ const getReturnRequests = async (req,res) => {
 
 const processReturn = async (req,res) => {
     try{
+        const { id } = req.query;
+        const { action, adminNotes, refundAmount } = req.body;
+        const adminId = req.user.userId;
+
+        if(!['approve','reject'].includes(action)){
+            return res.status(400).json({error:'Action must be approve or reject'});
+        }
+
         
     }catch(error){
         console.error('Error in processReturn:',error);
