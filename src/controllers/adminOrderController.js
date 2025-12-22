@@ -475,3 +475,12 @@ const processCancellation = async (req,res) => {
         res.status(500).json({error:'Failed to procces cancellation'})
     }
 };
+
+const getReturnRequests = async (req,res) => {
+    try{
+        
+    }catch(error){
+        console.error('Error in getReturnRequest:',error);
+        res.status(500).json({error:'failed to fetch return requests'});
+    }
+};
