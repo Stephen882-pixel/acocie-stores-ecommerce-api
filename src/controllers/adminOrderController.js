@@ -418,7 +418,12 @@ const processCancellation = async (req,res) => {
                     },{transaction});
                 }
             }
-            
+
+            const oldStatus = order.status;
+            await order.update({
+                status:'cancelled',
+                cancelled_at:new Date()
+            },{transaction});
         }
 
     } catch (error){
