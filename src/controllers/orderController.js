@@ -1,0 +1,423 @@
+
+const {
+  Order,
+  OrderItem,
+  OrderStatusHistory,
+  OrderTracking,
+  OrderCancellation,
+  OrderNote,
+  Address,
+  Product,
+  User,
+  sequelize
+} = require('../models');
+const { Op, or } = require('sequelize');
+const emailService = require('../services/emailService');
+const models = require('../models');
+
+const getOrderHistory = async(req,res) => {
+    try{
+        const userId = req.user.userId;
+        const {
+            page =1,
+            limit = 20,
+            status,
+            startDate,
+            endDate
+        } = req.query;
+
+        const offset = (page - 1) * limit;
+        const where = { userId };
+
+        if(status){
+            where.status = status;
+        }
+
+        if(startDate || endDate){
+            where.created_at = {};
+            if(startDate) where.created_at[Op.gte] = new Date(startDate);
+            if(endDate) where.created_at[Op.lte] = new Date(endDate);
+        }
+
+        const { count, rows: orders } = await Order.findAndCountAll({
+            where,
+            include :[
+                {
+                    model:OrderItem,
+                    as:'items',
+                    include:[
+                        {
+                            model:Product,
+                            as:'product',
+                            attributes:['id','name','slug']
+                        }
+                    ]
+                }
+            ],
+            limit:parseInt(limit),
+            offset:parseInt(offset),
+            order:[['created_at','DESC']]
+        });
+
+        res.json({
+            orders,
+            pagination:{
+                total: count,
+                page:parseInt(page),
+                limit:parseInt(limit),
+                pages:Math.ceil(count/limit)
+            }
+        });
+    } catch (error){
+        console.error('Error in getOrderHistory:',error);
+        res.status(500).json({error:'Failef to fetch order history'});
+    }
+};
+
+
+const getOrderById = async (req,res) => {
+    try{
+        const { id } = req.params;
+        const userId = req.user.userId;
+
+        const order = await Order.findOne({
+            where:{ id,userId },
+            include:[
+                {
+                    model:OrderItem,
+                    as:'items',
+                    include:[
+                        {
+                            model:Product,
+                            as:'product',
+                            attributes:['id','name','slug','status']
+                        },
+                        {
+                            model:User,
+                            as:'vendor',
+                            attributes:['id','firstName','lastName','email']
+                        }
+                    ]
+                },
+                {
+                    model:Address,
+                    as:'shippingAddress'
+                },
+                {
+                    model:Address,
+                    as:'billingAddress'
+                },
+                {
+                    model:OrderTracking,
+                    as:'tracking',
+                    required:false
+                },
+                {
+                    model:OrderNote,
+                    as:'orderNotes',
+                    where:{
+                        [Op.or]:[
+                            { isVisibleToCustomer:true },
+                            { userId }
+                        ]
+                    },
+                    required:false,
+                    include:[
+                        {
+                            model:User,
+                            as:'user',
+                            attributes:['id','firstName','lastName','role']
+                        }
+                    ],
+                    order:[['created_at','DESC']]
+                }
+            ]
+        });
+        if(!order){
+            return res.status(404).json({error:'Order not found'});
+        }
+        res.json({ order })
+    }catch(error){
+        console.error('Error in getOrderById:',error);
+        res.status(500).json({
+            error:'Failed to fetch order'
+        });
+    }
+};
+
+const getOrderByNumber = async (req,res) => {
+    try{
+        const { orderNumber } = req.params;
+        const userId = req.user.userId;
+
+        const order = await Order.findOne({
+            where:{ orderNumber,userId },
+            include:[
+                {
+                    model:OrderItem,
+                    as:'items',
+                    include:[{ model:Product,as:'product' }]
+                },
+                { model:Address,as:'shippingAddress' },
+                { model:OrderTracking,as:'tracking',required:false }
+            ]
+        });
+        if(!order){
+            return res.status(404).json({error:'Order not found'});
+        }
+
+        res.json({ order });
+    } catch(error){
+        console.error('Error in getOrderByNumber:',error);
+        res.status(500).json({error:'Failed to fetch order'});
+    }
+};
+
+const getOrderTracking = async (req,res) => {
+    try{
+        const { id } = req.params;
+        const userId = req.user.userId;
+
+        const order = await Order.findOne({ where:{ id,userId } });
+
+        if(!order){
+            return res.status(404).json({error:'Order not found'});
+        }
+
+        const tracking = await OrderTracking.findOne({
+            where: { orderId:id }
+        });
+        
+        if(!tracking){
+            return res.status(404).json({error:'Tracking information not available yet'});
+        }
+
+        res.json({ tracking });
+    } catch(error){
+        console.error('Error in getOrderTracking:',error);
+        res.status(500).json({error:'Failed to fetch tracking informations'});
+    }
+};
+
+
+const requestOrderCancellation = async (req,res) => {
+    try{
+        const { id } = req.params;
+        const { reason } = req.body;
+        const  userId  = req.user.userId;
+
+        if(!reason){
+            return res.status(400).json({error:'Cancellation reason is required'});
+        }
+
+        const order = await Order.findOne({
+            where: { id,userId }
+        });
+
+        if(!order){
+            return res.status(404).json({error:'Order not found'});
+        }
+
+        if(!['pending','confirmed'].includes(order.status)){
+            return res.status(400).json({
+                error:'Order cannot be cancelled at this stage',
+                currentStatus:order.status
+            });
+        }
+
+        const existing = await OrderCancellation.findOne({
+            where:{
+                orderId:id,
+                type:'cancellation',
+                status:'pending'
+            }
+        });
+
+        if(existing){
+            return res.status(400).json({error:'Cancellation request already pending'});
+        }
+
+        const cancellation = await OrderCancellation.create({
+            orderId:id,
+            type:'cancellation',
+            status:'pending',
+            reason,
+            requestedByUserId:userId
+        });
+
+        emailService.sendCancellationRequestNotification(order.orderNumber,reason)
+            .catch(err => console.error('Email send failed:',err));
+
+        res.status(201).json({
+            message:'Cancellation request submitted successfully',
+            cancellation
+        });
+    }catch(error){
+        console.error('Error in requestOrderCancellation:',error);
+        res.status(500).json({error:'Failed to submit the cancellation request'});
+    }
+};
+
+const requestReturn = async (req,res) => {
+    try{
+        const { id } = req.params;
+        const { reason } = req.body;
+        const userId = req.user.userId;
+        
+        if(!reason){
+            return res.status(400).json({ error: 'Return reason is required' });
+        }
+
+        const order = await Order.findOne({ where: { id, userId } });
+
+        if (!order) {
+        return res.status(404).json({ error: 'Order not found' });
+        }
+
+        if (order.status !== 'delivered') {
+        return res.status(400).json({ error: 'Only delivered orders can be returned' });
+        }
+
+        const daysSinceDelivery = Math.floor(
+        (new Date() - new Date(order.deliveredAt)) / (1000 * 60 * 60 * 24)
+        );
+
+        if (daysSinceDelivery > 14) {
+        return res.status(400).json({
+            error: 'Return window has expired (14 days from delivery)'
+        });
+        }
+
+        const existing = await OrderCancellation.findOne({
+        where: {
+            orderId: id,
+            type: 'return',
+            status: 'pending'
+        }
+        });
+
+        if (existing) {
+        return res.status(400).json({ error: 'Return request already pending' });
+        }
+
+        const returnRequest = await OrderCancellation.create({
+        orderId: id,
+        type: 'return',
+        status: 'pending',
+        reason,
+        requestedByUserId: userId
+        });
+
+        res.status(201).json({
+        message: 'Return request submitted successfully',
+        returnRequest
+        });
+    } catch(error){
+        console.error('Error in requestReturn:',error);
+        res.status(500).json({error:'Failed to submit return request'});
+    }
+};
+
+const addCustomerNote = async (req,res) => {
+    try{
+        const { id } = req.params;
+        const { content } = req.body;
+        const userId = req.user.userId;
+
+        if(!content){
+            return res.status(400).json({error:'Note content is required'});
+        }
+
+        const order = await Order.findOne({ where: {id,userId} });
+
+        if(!order){
+            return res.status(404).json({error:'Order not found'});
+        }
+
+        const note = await OrderNote.create({
+            orderId:id,
+            userId,
+            noteType:'customer_note',
+            content,
+            isVisibleToCustomer:true
+        });
+
+        const completeNote = await OrderNote.findByPk(note.id,{
+            include:[
+                {
+                    model:User,
+                    as:'user',
+                    attributes:['id','firstName','lastName']
+                }
+            ]
+        });
+
+        res.status(201).json({
+            message:'Note added successfully',
+            note:completeNote
+        });
+    }catch(error){  
+        console.error('Error in addCustomerNote:',error);
+        res.status(500).json({error:'Failed to add note'});
+    }
+};
+
+const getOrderStats = async (req, res) => {
+  try {
+    const userId = req.user.userId;
+
+    const totalOrders = await Order.count({ where: { userId } });
+
+    const totalSpent = await Order.sum('totalAmount', {
+      where: {
+        userId,
+        paymentStatus: 'paid'
+      }
+    });
+
+    const ordersByStatus = await Order.findAll({
+      where: { userId },
+      attributes: [
+        'status',
+        [sequelize.fn('COUNT', sequelize.col('id')), 'count']
+      ],
+      group: ['status']
+    });
+
+    const recentOrders = await Order.findAll({
+      where: { userId },
+      limit: 5,
+      order: [['created_at', 'DESC']],
+      attributes: ['id', 'orderNumber', 'status', 'totalAmount', 'created_at']
+    });
+
+    res.json({
+      totalOrders,
+      totalSpent: totalSpent || 0,
+      ordersByStatus: ordersByStatus.map(o => ({
+        status: o.status,
+        count: parseInt(o.get('count'))
+      })),
+      recentOrders
+    });
+  } catch (error) {
+    console.error('Error in getOrderStats:', error);
+    res.status(500).json({ error: 'Failed to fetch order statistics' });
+  }
+};
+
+
+
+module.exports = {
+    getOrderHistory,
+    getOrderById,
+    getOrderByNumber,
+    getOrderTracking,
+    requestOrderCancellation,
+    requestReturn,
+    addCustomerNote,
+    getOrderStats
+};
+
+
+

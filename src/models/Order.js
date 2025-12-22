@@ -160,6 +160,16 @@ module.exports = (sequelize) => {
       as: 'items',
       onDelete: 'CASCADE'
     });
+    Order.hasOne(models.OrderTracking, {
+      foreignKey: 'orderId',
+      as: 'tracking',
+      onDelete: 'CASCADE'
+    });
+    Order.hasMany(models.OrderNote, {
+      foreignKey: 'orderId',
+      as: 'orderNotes',
+      onDelete: 'CASCADE'
+    });
   };
 
 

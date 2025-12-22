@@ -199,12 +199,244 @@ const sendOrderConfirmation = async (email, firstName, orderNumber, totalAmount)
     return false;
   }
 };
+const sendOrderConfirmedNotification = async (email, firstName, orderNumber) => {
+  const mailOptions = {
+    from: process.env.EMAIL_FROM,
+    to: email,
+    subject: `Order Confirmed - ${orderNumber}`,
+    html: `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+        <h1 style="color: #2563eb;">Acocie Stores</h1>
+        <h2>Order Confirmed!</h2>
+        <p>Hi ${firstName},</p>
+        <p>Your payment has been verified and your order <strong>${orderNumber}</strong> is confirmed!</p>
+        <p>We'll notify you once your items are being prepared for shipment.</p>
+      </div>
+    `
+  };
+
+  try {
+    await transporter.sendMail(mailOptions);
+    console.log(`✓ Order confirmed email sent for ${orderNumber}`);
+    return true;
+  } catch (error) {
+    console.error('✗ Error sending order confirmed email:', error.message);
+    return false;
+  }
+};
+const sendOrderProcessingNotification = async (email, firstName, orderNumber) => {
+  const mailOptions = {
+    from: process.env.EMAIL_FROM,
+    to: email,
+    subject: `Order Processing - ${orderNumber}`,
+    html: `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+        <h1 style="color: #2563eb;">Acocie Stores</h1>
+        <h2>Order is Being Prepared</h2>
+        <p>Hi ${firstName},</p>
+        <p>Great news! Your order <strong>${orderNumber}</strong> is now being prepared for shipment.</p>
+        <p>You'll receive another email with tracking information once your order ships.</p>
+      </div>
+    `
+  };
+
+  try {
+    await transporter.sendMail(mailOptions);
+    console.log(`✓ Order processing email sent for ${orderNumber}`);
+    return true;
+  } catch (error) {
+    console.error('✗ Error sending order processing email:', error.message);
+    return false;
+  }
+};
+
+const sendOrderShippedNotification = async (email, firstName, orderNumber, trackingNumber, carrier) => {
+  const mailOptions = {
+    from: process.env.EMAIL_FROM,
+    to: email,
+    subject: `Order Shipped - ${orderNumber}`,
+    html: `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+        <h1 style="color: #2563eb;">Acocie Stores</h1>
+        <h2>Your Order Has Shipped! 📦</h2>
+        <p>Hi ${firstName},</p>
+        <p>Your order <strong>${orderNumber}</strong> has been shipped!</p>
+        <div style="background-color: #f3f4f6; padding: 20px; border-radius: 8px; margin: 20px 0;">
+          <p><strong>Carrier:</strong> ${carrier}</p>
+          <p><strong>Tracking Number:</strong> ${trackingNumber}</p>
+        </div>
+        <p>Track your order in your account dashboard.</p>
+      </div>
+    `
+  };
+
+  try {
+    await transporter.sendMail(mailOptions);
+    console.log(`✓ Order shipped email sent for ${orderNumber}`);
+    return true;
+  } catch (error) {
+    console.error('✗ Error sending order shipped email:', error.message);
+    return false;
+  }
+};
+
+const sendOrderDeliveredNotification = async (email, firstName, orderNumber) => {
+  const mailOptions = {
+    from: process.env.EMAIL_FROM,
+    to: email,
+    subject: `Order Delivered - ${orderNumber}`,
+    html: `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+        <h1 style="color: #2563eb;">Acocie Stores</h1>
+        <h2>Order Delivered! 🎉</h2>
+        <p>Hi ${firstName},</p>
+        <p>Your order <strong>${orderNumber}</strong> has been delivered!</p>
+        <p>We hope you love your purchase. If you have any questions, feel free to contact us.</p>
+        <p>Thank you for shopping with Acocie Stores!</p>
+      </div>
+    `
+  };
+
+  try {
+    await transporter.sendMail(mailOptions);
+    console.log(`✓ Order delivered email sent for ${orderNumber}`);
+    return true;
+  } catch (error) {
+    console.error('✗ Error sending order delivered email:', error.message);
+    return false;
+  }
+};
+
+const sendCancellationApprovedNotification = async (email, firstName, orderNumber) => {
+  const mailOptions = {
+    from: process.env.EMAIL_FROM,
+    to: email,
+    subject: `Cancellation Approved - ${orderNumber}`,
+    html: `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+        <h1 style="color: #2563eb;">Acocie Stores</h1>
+        <h2>Cancellation Approved</h2>
+        <p>Hi ${firstName},</p>
+        <p>Your cancellation request for order <strong>${orderNumber}</strong> has been approved.</p>
+        <p>Your refund will be processed within 5-7 business days.</p>
+      </div>
+    `
+  };
+
+  try {
+    await transporter.sendMail(mailOptions);
+    console.log(`✓ Cancellation approved email sent for ${orderNumber}`);
+    return true;
+  } catch (error) {
+    console.error('✗ Error sending cancellation approved email:', error.message);
+    return false;
+  }
+};
+
+const sendRefundProcessedNotification = async (email, firstName, orderNumber, amount) => {
+  const mailOptions = {
+    from: process.env.EMAIL_FROM,
+    to: email,
+    subject: `Refund Processed - ${orderNumber}`,
+    html: `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+        <h1 style="color: #2563eb;">Acocie Stores</h1>
+        <h2>Refund Processed</h2>
+        <p>Hi ${firstName},</p>
+        <p>Your refund for order <strong>${orderNumber}</strong> has been processed.</p>
+        <p><strong>Refund Amount:</strong> KES ${amount}</p>
+        <p>The refund will appear in your original payment method within 5-7 business days.</p>
+      </div>
+    `
+  };
+
+  try {
+    await transporter.sendMail(mailOptions);
+    console.log(`✓ Refund processed email sent for ${orderNumber}`);
+    return true;
+  } catch (error) {
+    console.error('✗ Error sending refund processed email:', error.message);
+    return false;
+  }
+};
+
+const sendOrderStatusUpdateNotification = async (email, firstName, orderNumber, newStatus) => {
+  const statusMessages = {
+    pending: 'Your order is pending',
+    confirmed: 'Your order has been confirmed',
+    processing: 'Your order is being processed',
+    shipped: 'Your order has been shipped',
+    delivered: 'Your order has been delivered',
+    cancelled: 'Your order has been cancelled',
+    refunded: 'Your order has been refunded'
+  };
+
+  const mailOptions = {
+    from: process.env.EMAIL_FROM,
+    to: email,
+    subject: `Order Update - ${orderNumber}`,
+    html: `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+        <h1 style="color: #2563eb;">Acocie Stores</h1>
+        <h2>Order Status Updated</h2>
+        <p>Hi ${firstName},</p>
+        <p>${statusMessages[newStatus] || 'Your order status has been updated'}.</p>
+        <p><strong>Order Number:</strong> ${orderNumber}</p>
+        <p><strong>New Status:</strong> ${newStatus}</p>
+      </div>
+    `
+  };
+
+  try {
+    await transporter.sendMail(mailOptions);
+    console.log(`✓ Order status update email sent for ${orderNumber}`);
+    return true;
+  } catch (error) {
+    console.error('✗ Error sending order status update email:', error.message);
+    return false;
+  }
+};
+
+const sendCancellationRequestNotification = async (orderNumber, reason) => {
+  const mailOptions = {
+    from: process.env.EMAIL_FROM,
+    to: process.env.ADMIN_EMAIL || process.env.EMAIL_USER,
+    subject: `Cancellation Request - ${orderNumber}`,
+    html: `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+        <h1 style="color: #2563eb;">Acocie Stores - Admin Alert</h1>
+        <h2>New Cancellation Request</h2>
+        <p><strong>Order Number:</strong> ${orderNumber}</p>
+        <p><strong>Reason:</strong> ${reason}</p>
+        <p>Please review and process this request in the admin dashboard.</p>
+      </div>
+    `
+  };
+
+  try {
+    await transporter.sendMail(mailOptions);
+    console.log(`✓ Cancellation request notification sent for ${orderNumber}`);
+    return true;
+  } catch (error) {
+    console.error('✗ Error sending cancellation request notification:', error.message);
+    return false;
+  }
+};
+
 
 module.exports = {
   sendSignUpOTP,
   sendPasswordResetOTP,
   sendWelcomeEmail,
-  sendOrderConfirmation
+  sendOrderConfirmation,
+  sendOrderConfirmedNotification,
+  sendOrderProcessingNotification,
+  sendOrderShippedNotification,
+  sendOrderDeliveredNotification,
+  sendCancellationApprovedNotification,
+  sendRefundProcessedNotification,
+  sendOrderStatusUpdateNotification,
+  sendCancellationRequestNotification
 };
 
 
