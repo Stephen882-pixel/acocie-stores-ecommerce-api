@@ -397,6 +397,32 @@ const sendOrderStatusUpdateNotification = async (email, firstName, orderNumber, 
   }
 };
 
+const sendCancellationRequestNotification = async (orderNumber, reason) => {
+  const mailOptions = {
+    from: process.env.EMAIL_FROM,
+    to: process.env.ADMIN_EMAIL || process.env.EMAIL_USER,
+    subject: `Cancellation Request - ${orderNumber}`,
+    html: `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+        <h1 style="color: #2563eb;">Acocie Stores - Admin Alert</h1>
+        <h2>New Cancellation Request</h2>
+        <p><strong>Order Number:</strong> ${orderNumber}</p>
+        <p><strong>Reason:</strong> ${reason}</p>
+        <p>Please review and process this request in the admin dashboard.</p>
+      </div>
+    `
+  };
+
+  try {
+    await transporter.sendMail(mailOptions);
+    console.log(`✓ Cancellation request notification sent for ${orderNumber}`);
+    return true;
+  } catch (error) {
+    console.error('✗ Error sending cancellation request notification:', error.message);
+    return false;
+  }
+};
+
 
 module.exports = {
   sendSignUpOTP,
@@ -409,7 +435,8 @@ module.exports = {
   sendOrderDeliveredNotification,
   sendCancellationApprovedNotification,
   sendRefundProcessedNotification,
-  sendOrderStatusUpdateNotification
+  sendOrderStatusUpdateNotification,
+  sendCancellationRequestNotification
 };
 
 
