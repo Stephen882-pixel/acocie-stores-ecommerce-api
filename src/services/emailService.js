@@ -280,6 +280,33 @@ const sendOrderShippedNotification = async (email, firstName, orderNumber, track
   }
 };
 
+const sendOrderDeliveredNotification = async (email, firstName, orderNumber) => {
+  const mailOptions = {
+    from: process.env.EMAIL_FROM,
+    to: email,
+    subject: `Order Delivered - ${orderNumber}`,
+    html: `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+        <h1 style="color: #2563eb;">Acocie Stores</h1>
+        <h2>Order Delivered! 🎉</h2>
+        <p>Hi ${firstName},</p>
+        <p>Your order <strong>${orderNumber}</strong> has been delivered!</p>
+        <p>We hope you love your purchase. If you have any questions, feel free to contact us.</p>
+        <p>Thank you for shopping with Acocie Stores!</p>
+      </div>
+    `
+  };
+
+  try {
+    await transporter.sendMail(mailOptions);
+    console.log(`✓ Order delivered email sent for ${orderNumber}`);
+    return true;
+  } catch (error) {
+    console.error('✗ Error sending order delivered email:', error.message);
+    return false;
+  }
+};
+
 
 module.exports = {
   sendSignUpOTP,
@@ -288,7 +315,8 @@ module.exports = {
   sendOrderConfirmation,
   sendOrderConfirmedNotification,
   sendOrderProcessingNotification,
-  sendOrderShippedNotification
+  sendOrderShippedNotification,
+  sendOrderDeliveredNotification
 };
 
 
