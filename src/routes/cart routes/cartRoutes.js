@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const cartController = require('../controllers/cartController');
-const authenticate = require('../middleware/authMiddleware');
+const authenticate = require('../../middleware/authMiddleware');
 
 const optionalAuth = (req,res,next) => {
     const authHeader = req.headers?.authorization;

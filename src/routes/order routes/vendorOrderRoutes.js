@@ -1,8 +1,8 @@
 const express = require('express');
 const router = express.Router();
 const vendorOrderController = require('../controllers/vendorOrderController');
-const authenticate = require('../middleware/authMiddleware');
-const { authorize } = require('../middleware/roleMiddleware');
+const authenticate = require('../../middleware/authMiddleware');
+const { authorize } = require('../../middleware/roleMiddleware');
 
 
 router.use(authenticate);

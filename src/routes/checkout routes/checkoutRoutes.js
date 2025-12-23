@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const checkoutController = require('../controllers/checkoutController');
-const authenticate = require('../middleware/authMiddleware');
+const authenticate = require('../../middleware/authMiddleware');
 
 
 router.use(authenticate);
