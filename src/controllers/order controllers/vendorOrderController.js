@@ -9,10 +9,10 @@ const {
   Product,
   User,
   sequelize
-} = require('../models');
+} = require('../../models');
 const { Op } = require('sequelize');
-const emailService = require('../services/emailService');
-const models = require('../models');
+const emailService = require('../../services/emailService');
+const models = require('../../models');
 
 const recordStatusChange = async (orderId, oldStatus, newStatus, userId, reason = null) => {
   await OrderStatusHistory.create({

@@ -1,6 +1,6 @@
 
 
-const { User,LoginHistory } = require('../models');
+const { User,LoginHistory } = require('../../models');
 const { Op } = require('sequelize');
 
 

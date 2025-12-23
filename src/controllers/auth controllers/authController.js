@@ -1,10 +1,10 @@
 
 
-const { User, OTPCode, RefreshToken, LoginHistory } = require('../models');
-const authUtils = require('../utils/authUtils');
-const emailService = require('../services/emailService');
+const { User, OTPCode, RefreshToken, LoginHistory } = require('../../models');
+const authUtils = require('../../utils/authUtils');
+const emailService = require('../../services/emailService');
 const { Op } = require('sequelize');
-const { sequelize } = require('../config/database'); 
+const { sequelize } = require('../../config/database'); 
 const e = require('express');
 
 const signup = async (req,res) => {

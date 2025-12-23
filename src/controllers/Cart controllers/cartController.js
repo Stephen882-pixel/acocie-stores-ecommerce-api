@@ -7,10 +7,10 @@ const {
     ProductImage,
     Inventory,
     User
-} = require('../models');
+} = require('../../models');
 const { Op } = require('sequelize');
 const { v4: uuidv4 } = require('uuid');
-const models = require('../models');
+const models = require('../../models');
 
 
 const getOrCreateCart = async (userId,sessionId) => {

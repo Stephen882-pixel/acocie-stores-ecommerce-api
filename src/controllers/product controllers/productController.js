@@ -1,5 +1,5 @@
 
-const { sequelize,Product, Category, ProductImage, ProductVariant, Inventory, User } = require('../models');
+const { sequelize,Product, Category, ProductImage, ProductVariant, Inventory, User } = require('../../models');
 const { Op, or } = require('sequelize');
 
 const generateSlug = (text) => {

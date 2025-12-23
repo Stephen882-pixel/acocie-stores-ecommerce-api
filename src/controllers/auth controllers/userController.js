@@ -1,6 +1,6 @@
 
 
-const { User, Address, LoginHistory } = require('../models');
+const { User, Address, LoginHistory } = require('../../models');
 const { Op } = require('sequelize');
 
 const getProfile = async (req,res) => {
@@ -240,7 +240,7 @@ const deleteAccount = async (req, res) => {
       return res.status(404).json({ error: 'User not found' });
     }
 
-    const authUtils = require('../utils/authUtils');
+    const authUtils = require('../../utils/authUtils');
     const isPasswordValid = await authUtils.comparePassword(password, user.passwordHash);
 
     if (!isPasswordValid) {

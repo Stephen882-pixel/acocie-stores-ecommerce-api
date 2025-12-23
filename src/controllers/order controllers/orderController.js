@@ -10,10 +10,10 @@ const {
   Product,
   User,
   sequelize
-} = require('../models');
+} = require('../../models');
 const { Op, or } = require('sequelize');
-const emailService = require('../services/emailService');
-const models = require('../models');
+const emailService = require('../../services/emailService');
+const models = require('../../models');
 
 const getOrderHistory = async(req,res) => {
     try{

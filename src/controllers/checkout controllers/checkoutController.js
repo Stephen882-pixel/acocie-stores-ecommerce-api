@@ -9,9 +9,9 @@ const {
   Address,
   User,
   sequelize
-} = require('../models');
+} = require('../../models');
 const { Op } = require('sequelize');
-const emailService = require('../services/emailService');
+const emailService = require('../../services/emailService');
 
 const calculateOrderTotals= (items,shippingCost = 0,taxRate = 0.16) => {
     const subtotal = items.reduce((sum,item) => {
