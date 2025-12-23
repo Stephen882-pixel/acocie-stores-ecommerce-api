@@ -1,275 +1,758 @@
-# Acocie Stores - E-commerce Platform API
+# Acocie Stores E-commerce API
 
-Enterprise-scale e-commerce platform built with Express.js, Sequelize ORM, and PostgreSQL.
+A comprehensive, production-ready RESTful API for a multi-vendor e-commerce marketplace built with Express.js, PostgreSQL, and Sequelize ORM.
 
-## 🚀 Features
+## Table of Contents
 
-### Authentication & Authorization
-- ✅ JWT-based authentication (access + refresh tokens)
-- ✅ Role-based access control (Customer, Vendor, Admin, Super Admin)
-- ✅ OTP verification for signup and password reset
-- ✅ Email verification system
-- ✅ Password strength validation
-- ✅ Login history tracking
-- ✅ Session management
+- [Features](#features)
+- [Technology Stack](#technology-stack)
+- [Architecture](#architecture)
+- [Installation](#installation)
+- [Configuration](#configuration)
+- [Database Setup](#database-setup)
+- [API Documentation](#api-documentation)
+- [Authentication](#authentication)
+- [User Roles](#user-roles)
+- [Project Structure](#project-structure)
+- [Running the Application](#running-the-application)
+- [Testing](#testing)
+- [Contributing](#contributing)
+- [License](#license)
 
-### User Management
-- ✅ User profiles with CRUD operations
-- ✅ Multiple address management
-- ✅ Account status control (active, suspended, banned)
-- ✅ Profile completion tracking
-- ✅ Self-service account deletion
+## Features
 
-### Admin Features
-- ✅ User management dashboard
-- ✅ Role assignment and modification
-- ✅ Account status management
-- ✅ User statistics and analytics
-- ✅ Search and filter users
+### Core Functionality
 
-### Security
-- ✅ Bcrypt password hashing
-- ✅ Helmet.js security headers
-- ✅ CORS configuration
-- ✅ JWT token expiration
-- ✅ Protected routes with middleware
+- **User Authentication & Authorization**
+  - JWT-based authentication with access and refresh tokens
+  - Email verification via OTP
+  - Password reset with OTP verification
+  - Role-based access control (Customer, Vendor, Admin, Super Admin)
+  - Login history tracking
+  - Account status management
 
-## 📋 Prerequisites
+- **Product Management**
+  - Multi-vendor product catalog
+  - Hierarchical category system
+  - Product variants (size, color, etc.)
+  - Multiple product images with ordering
+  - Real-time inventory tracking
+  - Stock reservation system
+  - Low stock alerts
+  - Product search and filtering
+  - Featured products
 
-- Node.js >= 16.x
-- PostgreSQL >= 12.x
+- **Shopping Experience**
+  - Guest cart support (session-based)
+  - Authenticated user carts
+  - Cart merging on login
+  - Stock validation
+  - Price change detection
+  - Multiple address management
+
+- **Order Management**
+  - Complete order lifecycle tracking
+  - Order status management (7 statuses)
+  - Shipping and delivery tracking
+  - Order cancellations and returns
+  - Refund processing
+  - Multi-vendor order handling
+  - Order notes and communication
+  - Status change audit trail
+
+- **Vendor Features**
+  - Vendor dashboard
+  - Product management
+  - Order processing
+  - Shipping management
+  - Revenue analytics
+
+- **Admin Features**
+  - User management
+  - Product oversight
+  - Order management
+  - Cancellation/return approvals
+  - Refund processing
+  - Platform analytics
+  - Role assignment
+
+## Technology Stack
+
+### Backend
+- **Runtime:** Node.js
+- **Framework:** Express.js
+- **Database:** PostgreSQL
+- **ORM:** Sequelize
+- **Authentication:** JSON Web Tokens (JWT)
+- **Password Hashing:** bcrypt
+- **Email:** Nodemailer
+
+### Security & Middleware
+- **Security Headers:** Helmet.js
+- **CORS:** cors
+- **Logging:** Morgan
+- **Input Validation:** express-validator
+
+### Development Tools
+- **Process Manager:** PM2 (recommended for production)
+- **Environment Variables:** dotenv
+- **API Testing:** Postman (recommended)
+
+## Architecture
+
+### Database Schema
+
+The application uses 18 database tables organized into five modules:
+
+**Authentication & User Management (5 tables)**
+- users
+- otp_codes
+- refresh_tokens
+- addresses
+- login_history
+
+**Product Catalog (5 tables)**
+- categories
+- products
+- product_images
+- product_variants
+- inventory
+
+**Shopping Cart (2 tables)**
+- carts
+- cart_items
+
+**Orders (2 tables)**
+- orders
+- order_items
+
+**Order Management (4 tables)**
+- order_status_history
+- order_tracking
+- order_cancellations
+- order_notes
+
+### API Endpoints
+
+The API provides 77+ RESTful endpoints across multiple modules:
+
+- **Authentication:** 8 public endpoints
+- **User Management:** 11 protected endpoints
+- **Admin User Management:** 6 endpoints
+- **Product Catalog:** 12 endpoints
+- **Shopping Cart:** 7 endpoints
+- **Checkout:** 3 endpoints
+- **Customer Orders:** 8 endpoints
+- **Vendor Orders:** 8 endpoints
+- **Admin Orders:** 12+ endpoints
+
+## Installation
+
+### Prerequisites
+
+- Node.js (v16 or higher)
+- PostgreSQL (v12 or higher)
 - npm or yarn
-- SMTP server (for emails)
+- Git
 
-## 🛠️ Installation
+### Clone Repository
 
-### 1. Clone the repository
 ```bash
-git clone https://github.com/yourusername/acocie-stores.git
-cd acocie-stores
+git clone https://github.com/Stephen882-pixel/acocie-stores-ecommerce-api.git
+cd acocie-stores-ecommerce-api
 ```
 
-### 2. Install dependencies
+### Install Dependencies
+
 ```bash
 npm install
 ```
 
-### 3. Setup PostgreSQL database
-```bash
-# Create database
-createdb acocie_stores
+## Configuration
 
-# Or using psql
+### Environment Variables
+
+Create a `.env` file in the root directory:
+
+```env
+# Server Configuration
+NODE_ENV=development
+PORT=3000
+
+# Database Configuration
+DB_HOST=localhost
+DB_PORT=5432
+DB_NAME=acocie_stores
+DB_USER=postgres
+DB_PASSWORD=your_password
+
+# JWT Configuration
+JWT_SECRET=your_super_secret_jwt_key_change_this_in_production
+JWT_REFRESH_SECRET=your_super_secret_refresh_key_change_this_in_production
+JWT_ACCESS_EXPIRY=15m
+JWT_REFRESH_EXPIRY=7d
+
+# Email Configuration (SMTP)
+EMAIL_HOST=smtp.gmail.com
+EMAIL_PORT=587
+EMAIL_USER=your_email@gmail.com
+EMAIL_PASSWORD=your_app_password
+EMAIL_FROM="Acocie Stores <noreply@acocie.com>"
+
+# Frontend URL (for CORS)
+FRONTEND_URL=http://localhost:3001
+
+# OTP Configuration
+OTP_EXPIRY_MINUTES=10
+```
+
+### Email Setup
+
+For Gmail:
+1. Enable 2-Factor Authentication
+2. Generate an App Password
+3. Use the App Password in `EMAIL_PASSWORD`
+
+## Database Setup
+
+### Create Database
+
+```bash
+# Using psql
 psql -U postgres
 CREATE DATABASE acocie_stores;
 \q
 ```
 
-### 4. Configure environment variables
-```bash
-cp .env.example .env
-# Edit .env with your configuration
-```
+### Run Migrations
 
-### 5. Run database migrations (optional - auto-sync in dev mode)
+The application will automatically sync models in development mode. For production, use migrations:
+
 ```bash
 npm run migrate
 ```
 
-### 6. Start the server
+### Create Admin User
+
+Use the CLI script to create the first admin:
+
 ```bash
-# Development mode with auto-reload
-npm run dev
-
-# Production mode
-npm start
+npm run create-admin
 ```
 
-## 📁 Project Structure
+Follow the prompts to enter:
+- First Name
+- Last Name
+- Email
+- Password
+- Role (admin or super_admin)
+
+## API Documentation
+
+### Base URL
 
 ```
-acocie-stores/
+http://localhost:3000/api/v1
+```
+
+### Authentication
+
+Most endpoints require authentication via Bearer token:
+
+```
+Authorization: Bearer <your_access_token>
+```
+
+### Common Response Codes
+
+- **200 OK:** Successful GET request
+- **201 Created:** Successful POST request
+- **400 Bad Request:** Invalid input
+- **401 Unauthorized:** Missing or invalid token
+- **403 Forbidden:** Insufficient permissions
+- **404 Not Found:** Resource not found
+- **409 Conflict:** Resource already exists
+- **500 Internal Server Error:** Server error
+
+### Sample Endpoints
+
+#### Authentication
+
+```bash
+# Register
+POST /api/v1/auth/register
+Content-Type: application/json
+
+{
+  "firstName": "John",
+  "lastName": "Doe",
+  "email": "john@example.com",
+  "password": "SecurePass123"
+}
+
+# Login
+POST /api/v1/auth/login
+Content-Type: application/json
+
+{
+  "email": "john@example.com",
+  "password": "SecurePass123"
+}
+```
+
+#### Products
+
+```bash
+# Get all products
+GET /api/v1/products?page=1&limit=20
+
+# Get product by ID
+GET /api/v1/products/:id
+
+# Search products
+GET /api/v1/products/search?q=iphone
+
+# Create product (Vendor/Admin)
+POST /api/v1/products
+Authorization: Bearer <token>
+Content-Type: application/json
+
+{
+  "categoryId": "uuid",
+  "name": "iPhone 15 Pro",
+  "sku": "IP15P-001",
+  "price": 999.99,
+  "stockQuantity": 50
+}
+```
+
+#### Shopping Cart
+
+```bash
+# Add to cart
+POST /api/v1/cart/items
+Authorization: Bearer <token>
+Content-Type: application/json
+
+{
+  "productId": "uuid",
+  "quantity": 2
+}
+
+# Get cart
+GET /api/v1/cart
+Authorization: Bearer <token>
+```
+
+#### Orders
+
+```bash
+# Get order history
+GET /api/v1/orders
+Authorization: Bearer <token>
+
+# Get order details
+GET /api/v1/orders/:id
+Authorization: Bearer <token>
+
+# Place order
+POST /api/v1/checkout/place-order
+Authorization: Bearer <token>
+Content-Type: application/json
+
+{
+  "shippingAddressId": "uuid",
+  "paymentMethod": "cash_on_delivery"
+}
+```
+
+## Authentication
+
+### JWT Token Flow
+
+1. **Register:** User creates account
+2. **Verify OTP:** Email verification required
+3. **Login:** Receive access token (15 min) and refresh token (7 days)
+4. **Access API:** Use access token in Authorization header
+5. **Refresh:** Use refresh token to get new access token when expired
+
+### Password Requirements
+
+- Minimum 8 characters
+- At least one uppercase letter
+- At least one lowercase letter
+- At least one number
+
+## User Roles
+
+### Customer
+- Browse and search products
+- Manage shopping cart
+- Place orders
+- Track orders
+- Request cancellations/returns
+- Manage profile and addresses
+
+### Vendor
+- All customer permissions
+- Create and manage products
+- Process orders containing their products
+- Add tracking information
+- View vendor analytics
+
+### Admin
+- All vendor permissions
+- Manage all users
+- Oversee all products
+- Manage all orders
+- Process cancellations and returns
+- Handle refunds
+- Access platform analytics
+
+### Super Admin
+- All admin permissions
+- Manage other admins
+- System configuration
+- Full platform access
+
+## Project Structure
+
+```
+acocie-stores-ecommerce-api/
 ├── src/
 │   ├── config/
-│   │   └── database.js          # Sequelize configuration
+│   │   └── database.js
 │   ├── models/
-│   │   ├── index.js             # Models index
-│   │   ├── User.js              # User model
-│   │   ├── OTPCode.js           # OTP codes model
-│   │   ├── RefreshToken.js      # Refresh tokens
-│   │   ├── Address.js           # User addresses
-│   │   └── LoginHistory.js      # Login tracking
+│   │   ├── index.js
+│   │   ├── User.js
+│   │   ├── Product.js
+│   │   ├── Order.js
+│   │   └── ... (18 models total)
 │   ├── controllers/
-│   │   ├── authController.js    # Authentication logic
-│   │   ├── userController.js    # User management
-│   │   └── adminController.js   # Admin operations
+│   │   ├── authController.js
+│   │   ├── productController.js
+│   │   ├── orderController.js
+│   │   └── ... (9 controllers)
 │   ├── middleware/
-│   │   ├── authMiddleware.js    # JWT verification
-│   │   └── roleMiddleware.js    # Role-based access
+│   │   ├── authMiddleware.js
+│   │   └── roleMiddleware.js
 │   ├── routes/
-│   │   ├── authRoutes.js        # Auth endpoints
-│   │   ├── userRoutes.js        # User endpoints
-│   │   └── adminRoutes.js       # Admin endpoints
+│   │   ├── authRoutes.js
+│   │   ├── productRoutes.js
+│   │   └── ... (10 route files)
 │   ├── services/
-│   │   └── emailService.js      # Email sending
+│   │   └── emailService.js
 │   └── utils/
-│       └── authUtils.js         # Auth utilities
+│       └── authUtils.js
+├── scripts/
+│   └── createAdmin.js
+├── seeders/
 ├── .env.example
 ├── .gitignore
 ├── package.json
-├── README.md
-└── server.js
+├── server.js
+└── README.md
 ```
 
-## 🔌 API Endpoints
+## Running the Application
 
-### Authentication (`/api/v1/auth`)
-
-| Method | Endpoint | Description | Auth Required |
-|--------|----------|-------------|---------------|
-| POST | `/register` | Register new user | No |
-| POST | `/verify-otp` | Verify email OTP | No |
-| POST | `/login` | User login | No |
-| POST | `/refresh-token` | Refresh access token | No |
-| POST | `/forgot-password` | Request password reset | No |
-| POST | `/verify-reset-otp` | Verify reset OTP | No |
-| POST | `/reset-password` | Reset password | No |
-| POST | `/logout` | Logout user | Yes |
-| POST | `/change-password` | Change password | Yes |
-
-### User Management (`/api/v1/users`)
-
-| Method | Endpoint | Description | Auth Required |
-|--------|----------|-------------|---------------|
-| GET | `/profile` | Get user profile | Yes |
-| PUT | `/profile` | Update profile | Yes |
-| DELETE | `/delete` | Delete account | Yes |
-| GET | `/addresses` | Get all addresses | Yes |
-| POST | `/addresses` | Add new address | Yes |
-| PUT | `/addresses/:id` | Update address | Yes |
-| DELETE | `/addresses/:id` | Delete address | Yes |
-| GET | `/login-history` | Get login history | Yes |
-
-### Admin (`/api/v1/admin`)
-
-| Method | Endpoint | Description | Auth Required | Role Required |
-|--------|----------|-------------|---------------|---------------|
-| GET | `/users` | Get all users | Yes | Admin |
-| GET | `/users/:id` | Get user by ID | Yes | Admin |
-| PUT | `/users/:id/status` | Update user status | Yes | Admin |
-| PUT | `/users/:id/role` | Update user role | Yes | Admin |
-| DELETE | `/users/:id` | Delete user | Yes | Admin |
-| GET | `/dashboard/stats` | Get dashboard stats | Yes | Admin |
-
-## 🔐 User Roles
-
-1. **Customer** (default)
-   - Basic shopping features
-   - Manage own profile and addresses
-   - View order history
-
-2. **Vendor**
-   - All customer permissions
-   - Manage products (coming in Phase 2)
-   - View vendor dashboard
-
-3. **Admin**
-   - All vendor permissions
-   - Manage users
-   - View platform analytics
-   - Moderate content
-
-4. **Super Admin**
-   - All admin permissions
-   - System configuration
-   - Manage admins
-   - Full platform access
-
-## 📧 Email Templates
-
-The system sends the following emails:
-- Signup verification OTP
-- Password reset OTP
-- Welcome email (after verification)
-
-Configure your SMTP settings in `.env` to enable email functionality.
-
-## 🧪 Testing
+### Development Mode
 
 ```bash
-# Run tests
-npm test
+npm run dev
+```
 
-# Run tests with coverage
+The server will start with auto-reload on `http://localhost:3000`
+
+### Production Mode
+
+```bash
+npm start
+```
+
+### Health Check
+
+```bash
+curl http://localhost:3000/health
+```
+
+Expected response:
+```json
+{
+  "status": "healthy",
+  "database": "connected",
+  "timestamp": "2024-12-23T10:30:00.000Z"
+}
+```
+
+## Testing
+
+### Manual Testing
+
+Use Postman or any API client to test endpoints. Import the collection from the repository (if available).
+
+### Automated Testing
+
+```bash
+npm test
+```
+
+### Test Coverage
+
+```bash
 npm run test:coverage
 ```
 
-## 🔒 Security Best Practices
+## Key Features Implementation Details
 
-1. **Never commit `.env` file** - Contains sensitive credentials
-2. **Use strong JWT secrets** - Generate random, complex strings
-3. **Enable HTTPS in production** - Use SSL/TLS certificates
-4. **Rate limiting** - Implement rate limiting for auth endpoints
-5. **Database backups** - Regular automated backups
-6. **Monitor logs** - Set up logging and monitoring
-7. **Update dependencies** - Regular security updates
+### Inventory Management
 
-## 🚀 Deployment
+The system implements a three-state inventory model:
+
+- **Total Stock:** Physical inventory count
+- **Available Stock:** Can be purchased now
+- **Reserved Stock:** Held in pending checkouts/orders
+
+**Flow:**
+1. Add to cart: Validation only, no stock change
+2. Initiate checkout: Available -X, Reserved +X
+3. Place order: Reserved -X, Total -X
+4. Cancel order: Restore inventory appropriately
+
+### Multi-Vendor Orders
+
+When a customer orders from multiple vendors:
+- Single order record created
+- Order items track individual vendors
+- Each vendor sees only their items
+- Status updates per vendor
+- Unified customer view
+
+### Order Status Lifecycle
+
+```
+PENDING → CONFIRMED → PROCESSING → SHIPPED → DELIVERED
+    ↓         ↓            ↓          ↓
+CANCELLED  CANCELLED   CANCELLED  REFUNDED
+```
+
+### Security Measures
+
+- Bcrypt password hashing (10 rounds)
+- JWT token expiration
+- Refresh token rotation
+- Role-based access control
+- Account status management (active/suspended/banned)
+- Login attempt tracking
+- Email verification required
+- OTP expiration (10 minutes)
+
+## API Rate Limiting
+
+Consider implementing rate limiting in production:
+
+```javascript
+const rateLimit = require('express-rate-limit');
+
+const limiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 100 // limit each IP to 100 requests per windowMs
+});
+
+app.use('/api/', limiter);
+```
+
+## Error Handling
+
+The API returns consistent error responses:
+
+```json
+{
+  "error": "Error message description"
+}
+```
+
+In development mode, stack traces are included:
+
+```json
+{
+  "error": "Error message",
+  "stack": "Error stack trace..."
+}
+```
+
+## Email Notifications
+
+The system sends automated emails for:
+- Account verification (OTP)
+- Password reset (OTP)
+- Welcome message (post-verification)
+- Order confirmation
+- Order status updates (confirmed, processing, shipped, delivered)
+- Cancellation approvals
+- Refund notifications
+
+## Performance Considerations
+
+### Database Indexing
+
+All foreign keys and frequently queried fields are indexed for optimal performance.
+
+### Pagination
+
+List endpoints support pagination:
+```
+GET /api/v1/products?page=1&limit=20
+```
+
+### Caching (Future Enhancement)
+
+Consider implementing Redis caching for:
+- Product listings
+- Category trees
+- User sessions
+
+## Deployment
+
+### Recommended Deployment Platforms
+
+- **Heroku**
+- **AWS (EC2 + RDS)**
+- **DigitalOcean**
+- **Google Cloud Platform**
+- **Railway**
 
 ### Environment Variables for Production
 
-```bash
-NODE_ENV=production
-PORT=3000
-DB_HOST=your-db-host
-DB_NAME=acocie_stores_prod
-DB_USER=your-db-user
-DB_PASSWORD=strong-password
-JWT_SECRET=very-strong-random-secret
-JWT_REFRESH_SECRET=another-strong-secret
-FRONTEND_URL=https://your-domain.com
-```
+Ensure all sensitive values are properly configured:
+- Use strong, unique JWT secrets
+- Configure production database credentials
+- Set up production email service
+- Enable HTTPS
+- Set `NODE_ENV=production`
 
-### Database Migrations
+### Database Migration
 
+Before deploying:
 ```bash
-# Run migrations
 npm run migrate
-
-# Rollback migration
-npm run migrate:undo
 ```
 
-## 📝 Next Steps (Upcoming Phases)
+### Process Manager
 
-- Phase 2: Product Catalog Management
-- Phase 3: Shopping Cart & Wishlist
-- Phase 4: Order Management
-- Phase 5: Payment Integration
-- Phase 6: Vendor Dashboard
-- Phase 7: Reviews & Ratings
-- Phase 8: Search & Filters (Elasticsearch)
-- Phase 9: Real-time Notifications
-- Phase 10: Analytics Dashboard
-- Phase 11: Recommendation Engine
-- Phase 12: Global Scaling & Microservices
+Use PM2 for production:
+```bash
+npm install -g pm2
+pm2 start server.js --name acocie-api
+pm2 save
+pm2 startup
+```
 
-## 🤝 Contributing
+## Monitoring and Logging
+
+### Recommended Tools
+
+- **Application Monitoring:** New Relic, Datadog
+- **Error Tracking:** Sentry
+- **Log Management:** Loggly, Papertrail
+- **Uptime Monitoring:** UptimeRobot, Pingdom
+
+## Future Enhancements
+
+### Planned Features
+
+- Payment gateway integration (Stripe, PayPal, M-Pesa)
+- Wishlist functionality
+- Product reviews and ratings
+- Advanced search with Elasticsearch
+- Real-time notifications (WebSockets)
+- SMS notifications
+- Analytics dashboard
+- Recommendation engine
+- Coupon and discount system
+- Multi-currency support
+- Multi-language support
+
+### Scalability Roadmap
+
+- Redis caching layer
+- CDN integration for static assets
+- Database read replicas
+- Microservices architecture
+- Message queue system (RabbitMQ/Kafka)
+- Kubernetes deployment
+
+## Contributing
+
+Contributions are welcome! Please follow these steps:
 
 1. Fork the repository
-2. Create your feature branch (`git checkout -b feature/AmazingFeature`)
+2. Create a feature branch (`git checkout -b feature/AmazingFeature`)
 3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
 4. Push to the branch (`git push origin feature/AmazingFeature`)
 5. Open a Pull Request
 
-## 📄 License
+### Coding Standards
+
+- Use ES6+ JavaScript features
+- Follow existing code structure
+- Write meaningful commit messages
+- Include comments for complex logic
+- Update documentation as needed
+
+## Troubleshooting
+
+### Database Connection Issues
+
+```bash
+# Check PostgreSQL status
+sudo systemctl status postgresql
+
+# Verify credentials
+psql -U postgres -d acocie_stores
+```
+
+### Email Not Sending
+
+- Verify SMTP credentials
+- Check firewall settings
+- Enable "Less secure app access" for Gmail (or use App Password)
+
+### Port Already in Use
+
+```bash
+# Find process using port 3000
+lsof -i :3000
+
+# Kill the process
+kill -9 <PID>
+```
+
+## Support
+
+For issues and questions:
+- Open an issue on GitHub
+- Check existing documentation
+- Review API responses for error details
+
+## License
 
 This project is licensed under the ISC License.
 
-## 📞 Support
+## Acknowledgments
 
-For support, email support@acocie.com or open an issue on GitHub.
+- Built with Express.js
+- Database powered by PostgreSQL
+- ORM by Sequelize
+- Authentication via JWT
+
+## Contact
+
+**Developer:** Stephen Ondeyo  
+**Repository:** [https://github.com/Stephen882-pixel/acocie-stores-ecommerce-api](https://github.com/Stephen882-pixel/acocie-stores-ecommerce-api)
 
 ---
 
-**Built with ❤️ for Acocie Stores**
+**Version:** 1.0.0  
+**Last Updated:** December 2024  
+**Status:** Active Development
