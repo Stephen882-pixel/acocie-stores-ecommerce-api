@@ -6,17 +6,17 @@ const morgan = require('morgan');
 require('dotenv').config();
 
 const { sequelize, testConnection } = require('./src/config/database');
-const authRoutes = require('./src/routes/authRoutes');
-const userRoutes = require('./src/routes/userRoutes');
-const adminRoutes = require('./src/routes/adminRoutes');
-const productRoutes = require('../acocie_stores/src/routes/productRoutes');
-const categoryRoutes = require('../acocie_stores/src/routes/categoryRoutes');
-const cartRoutes = require('./src/routes/cartRoutes');
-const checkoutRoutes = require('./src/routes/checkoutRoutes');
+const authRoutes = require('./src/routes/auth routes/authRoutes');
+const userRoutes = require('./src/routes/auth routes/userRoutes');
+const adminRoutes = require('./src/routes/auth routes/adminRoutes');
+const productRoutes = require('../acocie_stores/src/routes/product routes/productRoutes');
+const categoryRoutes = require('../acocie_stores/src/routes/category routes/categoryRoutes');
+const cartRoutes = require('./src/routes/cart routes/cartRoutes');
+const checkoutRoutes = require('./src/routes/checkout routes/checkoutRoutes');
 
-const orderRoutes = require('./src/routes/orderRoutes');
-const vendorOrderRoutes = require('./src/routes/vendorOrderRoutes');
-const adminOrderRoutes = require('./src/routes/adminOrderRoutes');
+const orderRoutes = require('./src/routes/order routes/orderRoutes');
+const vendorOrderRoutes = require('./src/routes/order routes/vendorOrderRoutes');
+const adminOrderRoutes = require('./src/routes/order routes/adminOrderRoutes');
 
 const app = express();
 
