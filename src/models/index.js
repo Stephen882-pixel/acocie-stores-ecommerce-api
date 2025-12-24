@@ -1,28 +1,28 @@
 const { sequelize } = require('../config/database');
 
 
-const UserModel = require('./User');
-const OTPCodeModel = require('./OTPCode');
-const RefreshTokenModel = require('./RefreshToken');
-const AddressModel = require('./Address');
-const LoginHistoryModel = require('./LoginHistory');
+const UserModel = require('./auth models/User');
+const OTPCodeModel = require('./auth models/OTPCode');
+const RefreshTokenModel = require('./auth models/RefreshToken');
+const AddressModel = require('./auth models/Address');
+const LoginHistoryModel = require('./auth models/LoginHistory');
 
 
-const CategoryModel = require('./Category');
-const ProductModel = require('./Product');
-const ProductImageModel = require('./ProductImage');
-const ProductVariantModel = require('./ProductVariant');
-const InventoryModel = require('./Inventory');
+const CategoryModel = require('./category models/Category');
+const ProductModel = require('./product models/Product');
+const ProductImageModel = require('./product models/ProductImage');
+const ProductVariantModel = require('./product models/ProductVariant');
+const InventoryModel = require('./checkout models/Inventory');
 
-const CartModel = require('./Cart');
-const CartItemModel = require('./CartItem');
-const OrderModel = require('./Order');
-const OrderItemModel = require('./OrderItem');
+const CartModel = require('./cart models/Cart');
+const CartItemModel = require('./cart models/CartItem');
+const OrderModel = require('./order models/Order');
+const OrderItemModel = require('./order models/OrderItem');
 
-const OrderStatusHistoryModel = require('./OrderStatusHistory');
-const OrderTrackingModel = require('./OrderTracking');
-const OrderCancellationModel = require('./OrderCancellation');
-const OrderNoteModel = require('./OrderNote');
+const OrderStatusHistoryModel = require('./order models/OrderStatusHistory');
+const OrderTrackingModel = require('./order models/OrderTracking');
+const OrderCancellationModel = require('./order models/OrderCancellation');
+const OrderNoteModel = require('./order models/OrderNote');
 
 const User = UserModel(sequelize);
 const OTPCode = OTPCodeModel(sequelize);
