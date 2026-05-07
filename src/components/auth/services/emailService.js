@@ -3,12 +3,18 @@ const nodemailer = require('nodemailer');
 
 const transporter = nodemailer.createTransport({
     host: process.env.EMAIL_HOST,
-    port: process.env.EMAIL_PORT,
-    secure: false,
+    port: parseInt(process.env.EMAIL_PORT, 10),
+    secure: true,
     auth: {
         user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_PASSWORD
-  }
+        pass: process.env.EMAIL_PASSWORD.replace(/\s/g, '')
+    },
+    connectionTimeout: 10000,
+    greetingTimeout: 10000,
+    socketTimeout: 15000,
+    tls: {
+        rejectUnauthorized: false
+    }
 });
 
 const sendSignUpOTP = async (email, firstName, otpCode) => {
