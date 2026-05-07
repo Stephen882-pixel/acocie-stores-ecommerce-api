@@ -159,11 +159,6 @@ const startServer = async () => {
     try{
         await testConnection();
 
-        if(process.env.NODE_ENV === 'development'){
-            await sequelize.sync({alter:false});
-            console.log(`  ${GREEN}✔${RESET}  Database models synced`);
-        }
-
         app.listen(PORT, () =>{
             const env = process.env.NODE_ENV || 'development';
             console.log(`\n${BOLD}${CYAN}  ╔══════════════════════════════════════╗${RESET}`);
