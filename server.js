@@ -28,11 +28,48 @@ app.use(cors({
     credentials:true
 }));
 
-if(process.env.NODE_ENV === 'development'){
-    app.use(morgan('dev'));
-} else {
-    app.use(morgan('combined'));
-}
+// Custom request logger
+const RESET = '\x1b[0m';
+const BOLD  = '\x1b[1m';
+const DIM   = '\x1b[2m';
+const GREEN = '\x1b[32m';
+const YELLOW = '\x1b[33m';
+const RED   = '\x1b[31m';
+const CYAN  = '\x1b[36m';
+const MAGENTA = '\x1b[35m';
+const WHITE = '\x1b[37m';
+
+const statusColor = (status) => {
+    if (status >= 500) return RED;
+    if (status >= 400) return YELLOW;
+    if (status >= 300) return CYAN;
+    return GREEN;
+};
+
+const methodColor = (method) => {
+    const colors = { GET: CYAN, POST: GREEN, PUT: YELLOW, PATCH: YELLOW, DELETE: RED };
+    return colors[method] || WHITE;
+};
+
+morgan.token('formatted-date', () => {
+    return new Date().toLocaleTimeString('en-US', { hour12: false });
+});
+
+app.use(morgan((tokens, req, res) => {
+    const method   = tokens.method(req, res);
+    const url      = tokens.url(req, res);
+    const status   = parseInt(tokens.status(req, res), 10);
+    const ms       = tokens['response-time'](req, res);
+    const time     = tokens['formatted-date'](req, res);
+
+    return [
+        `${DIM}[${time}]${RESET}`,
+        `${BOLD}${methodColor(method)}${method.padEnd(7)}${RESET}`,
+        `${WHITE}${url}${RESET}`,
+        `${BOLD}${statusColor(status)}${status}${RESET}`,
+        `${DIM}${ms} ms${RESET}`
+    ].join('  ');
+}));
 
 
 app.use(express.json());
@@ -105,8 +142,10 @@ app.use((req, res) => {
 });
 
 app.use((err, req, res, next) => {
-    console.error('Global error handler',err);
-
+    console.error(`${RED}${BOLD}[ERROR]${RESET} ${err.message}`);
+    if (err.stack && process.env.NODE_ENV === 'development') {
+        console.error(`${DIM}${err.stack}${RESET}`);
+    }
     res.status(err.status || 500).json({
         error: err.message || 'Internal Server error',
         ...(process.env.NODE_ENV === 'development' && {stack:err.stack})
@@ -122,17 +161,19 @@ const startServer = async () => {
 
         if(process.env.NODE_ENV === 'development'){
             await sequelize.sync({alter:false});
-            console.log('Database models syncronized');
+            console.log(`  ${GREEN}✔${RESET}  Database models synced`);
         }
 
         app.listen(PORT, () =>{
-            console.log('\n========================================');
-            console.log(` Acocie Stores API Server Running`);
-            console.log(` Environment: ${process.env.NODE_ENV || 'development'}`);
-            console.log(` Port: ${PORT}`);
-            console.log(` URL: http://localhost:${PORT}`);
-            console.log(` Health: http://localhost:${PORT}/health`);
-            console.log('========================================\n');
+            const env = process.env.NODE_ENV || 'development';
+            console.log(`\n${BOLD}${CYAN}  ╔══════════════════════════════════════╗${RESET}`);
+            console.log(`${BOLD}${CYAN}  ║      Acocie Stores API Server        ║${RESET}`);
+            console.log(`${BOLD}${CYAN}  ╚══════════════════════════════════════╝${RESET}`);
+            console.log(`  ${DIM}Environment${RESET}  ${BOLD}${env}${RESET}`);
+            console.log(`  ${DIM}Port        ${RESET}  ${BOLD}${GREEN}${PORT}${RESET}`);
+            console.log(`  ${DIM}URL         ${RESET}  ${CYAN}http://localhost:${PORT}${RESET}`);
+            console.log(`  ${DIM}Health      ${RESET}  ${CYAN}http://localhost:${PORT}/health${RESET}`);
+            console.log(`  ${DIM}Started at  ${RESET}  ${new Date().toLocaleTimeString()}\n`);
         });
     } catch(error){
         console.error('Failed to start server:', error);

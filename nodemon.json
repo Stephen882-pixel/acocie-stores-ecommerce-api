@@ -1,0 +1,13 @@
+{
+  "watch": ["src", "server.js"],
+  "ext": "js,json",
+  "ignore": [
+    ".env*",
+    "*.log",
+    "node_modules",
+    "postman",
+    "scripts",
+    "seeders"
+  ],
+  "delay": 500
+}

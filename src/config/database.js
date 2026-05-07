@@ -9,7 +9,7 @@ const sequelize = new Sequelize({
   username: process.env.DB_USER || 'postgres',
   password: process.env.DB_PASSWORD,
   dialect: 'postgres',
-  logging: process.env.NODE_ENV === 'development' ? console.log : false,
+  logging: false,
   pool: {
     max: 10,
     min: 0,
@@ -27,9 +27,9 @@ const sequelize = new Sequelize({
 const testConnection = async () =>{
     try{
         await sequelize.authenticate();
-        console.log('Database connection established successfully');
+        console.log('  \x1b[32m\u2714\x1b[0m  Database connected');
     }catch(error){
-        console.error('✗ Unable to connect to database:', error.message);
+        console.error('  \x1b[31m\u2717\x1b[0m  Database connection failed:', error.message);
         process.exit(1);
     }
 };
