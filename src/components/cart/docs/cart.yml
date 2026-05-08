@@ -1,0 +1,212 @@
+paths:
+  /api/v1/cart:
+    get:
+      tags: [Cart]
+      summary: Get cart
+      description: |
+        Returns the current cart with item-level issue flags (price changes, stock problems).  
+        Pass `X-Session-ID` header for guest carts, or use Bearer auth for logged-in users.
+      security:
+        - bearerAuth: []
+        - {}
+      parameters:
+        - name: X-Session-ID
+          in: header
+          description: Session identifier for guest carts
+          schema: { type: string }
+      responses:
+        '200':
+          description: Cart contents
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CartResponse'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+
+  /api/v1/cart/items:
+    post:
+      tags: [Cart]
+      summary: Add item to cart
+      description: Adds a product (and optional variant) to the cart. Creates the cart if it does not exist.
+      security:
+        - bearerAuth: []
+        - {}
+      parameters:
+        - name: X-Session-ID
+          in: header
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AddToCartRequest'
+            example:
+              productId: "3fa85f64-5717-4562-b3fc-2c963f66afa6"
+              quantity: 2
+      responses:
+        '200':
+          description: Item added / quantity updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AddToCartResponse'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+
+  /api/v1/cart/items/{id}:
+    put:
+      tags: [Cart]
+      summary: Update cart item quantity
+      security:
+        - bearerAuth: []
+        - {}
+      parameters:
+        - $ref: '#/components/parameters/IdParam'
+        - name: X-Session-ID
+          in: header
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateCartItemRequest'
+            example:
+              quantity: 3
+      responses:
+        '200':
+          description: Quantity updated
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+
+    delete:
+      tags: [Cart]
+      summary: Remove item from cart
+      security:
+        - bearerAuth: []
+        - {}
+      parameters:
+        - $ref: '#/components/parameters/IdParam'
+      responses:
+        '200':
+          description: Item removed
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+
+  /api/v1/cart/clear:
+    delete:
+      tags: [Cart]
+      summary: Clear cart
+      description: Removes all items from the cart.
+      security:
+        - bearerAuth: []
+        - {}
+      responses:
+        '200':
+          description: Cart cleared
+          content:
+            application/json:
+              example: { message: Cart cleared successfully }
+
+  /api/v1/cart/validate:
+    get:
+      tags: [Cart]
+      summary: Validate cart
+      description: Checks all items for stock availability and price changes. Safe to call before checkout.
+      security:
+        - bearerAuth: []
+        - {}
+      responses:
+        '200':
+          description: Validation result
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  valid:   { type: boolean }
+                  issues:  { type: array, items: { type: string } }
+
+  /api/v1/cart/merge:
+    post:
+      tags: [Cart]
+      summary: Merge guest cart into user cart
+      description: After login, merges items from a guest session cart into the authenticated user's cart.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MergeCartsRequest'
+      responses:
+        '200':
+          description: Carts merged
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+components:
+  schemas:
+    CartItem:
+      type: object
+      properties:
+        id:             { type: string, format: uuid }
+        productId:      { type: string, format: uuid }
+        variantId:      { type: string, format: uuid, nullable: true }
+        quantity:       { type: integer }
+        priceAtAddition:{ type: number }
+        currentPrice:   { type: number }
+        priceChanged:   { type: boolean }
+        availableStock: { type: integer }
+        issues:         { type: array, items: { type: string } }
+        product:
+          type: object
+          properties:
+            id:    { type: string, format: uuid }
+            name:  { type: string }
+            price: { type: number }
+
+    CartResponse:
+      type: object
+      properties:
+        id:        { type: string, format: uuid }
+        items:     { type: array, items: { $ref: '#/components/schemas/CartItem' } }
+        subtotal:  { type: string, example: "1200.00" }
+        itemCount: { type: integer }
+
+    AddToCartRequest:
+      type: object
+      required: [productId]
+      properties:
+        productId:  { type: string, format: uuid }
+        variantId:  { type: string, format: uuid }
+        quantity:   { type: integer, minimum: 1, maximum: 100, default: 1 }
+        sessionId:  { type: string }
+
+    AddToCartResponse:
+      type: object
+      properties:
+        cartItem:  { $ref: '#/components/schemas/CartItem' }
+        sessionId: { type: string, description: Only returned for guest carts }
+
+    UpdateCartItemRequest:
+      type: object
+      required: [quantity]
+      properties:
+        quantity:  { type: integer, minimum: 1, maximum: 100 }
+        sessionId: { type: string }
+
+    MergeCartsRequest:
+      type: object
+      required: [sessionId]
+      properties:
+        sessionId: { type: string }

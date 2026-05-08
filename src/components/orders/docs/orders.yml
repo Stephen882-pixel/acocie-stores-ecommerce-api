@@ -1,0 +1,269 @@
+paths:
+  /api/v1/orders:
+    get:
+      tags: [Orders]
+      summary: Get order history
+      description: Returns a paginated list of the authenticated user's orders.
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: page
+          in: query
+          schema: { type: integer, default: 1 }
+        - name: limit
+          in: query
+          schema: { type: integer, default: 20 }
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [pending, confirmed, processing, shipped, delivered, cancelled, refunded]
+        - name: startDate
+          in: query
+          schema: { type: string, format: date }
+        - name: endDate
+          in: query
+          schema: { type: string, format: date }
+      responses:
+        '200':
+          description: Order list
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  orders:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/OrderSummary'
+                  pagination:
+                    $ref: '#/components/schemas/Pagination'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /api/v1/orders/stats:
+    get:
+      tags: [Orders]
+      summary: Get order statistics
+      description: Returns aggregate order stats for the authenticated user.
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Order stats
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /api/v1/orders/number/{orderNumber}:
+    get:
+      tags: [Orders]
+      summary: Get order by order number
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: orderNumber
+          in: path
+          required: true
+          schema: { type: string, example: ORD-20260508-00042 }
+      responses:
+        '200':
+          description: Order details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Order'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+
+  /api/v1/orders/{id}:
+    get:
+      tags: [Orders]
+      summary: Get order by ID
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/IdParam'
+      responses:
+        '200':
+          description: Full order details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Order'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+
+  /api/v1/orders/{id}/tracking:
+    get:
+      tags: [Orders]
+      summary: Get order tracking
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/IdParam'
+      responses:
+        '200':
+          description: Tracking information
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrderTracking'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+
+  /api/v1/orders/{id}/cancel:
+    post:
+      tags: [Orders]
+      summary: Request order cancellation
+      description: Submits a cancellation request for a pending or confirmed order.
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/IdParam'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReasonRequest'
+            example:
+              reason: Changed my mind about the order
+      responses:
+        '200':
+          description: Cancellation request submitted
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+
+  /api/v1/orders/{id}/return:
+    post:
+      tags: [Orders]
+      summary: Request order return
+      description: Submits a return request for a delivered order within 14 days of delivery.
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/IdParam'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReasonRequest'
+            example:
+              reason: Item is defective
+      responses:
+        '200':
+          description: Return request submitted
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+
+  /api/v1/orders/{id}/notes:
+    post:
+      tags: [Orders]
+      summary: Add a note to an order
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/IdParam'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NoteRequest'
+            example:
+              content: Please leave at the gate
+      responses:
+        '201':
+          description: Note added
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+
+components:
+  schemas:
+    OrderItem:
+      type: object
+      properties:
+        id:          { type: string, format: uuid }
+        productId:   { type: string, format: uuid }
+        variantId:   { type: string, format: uuid, nullable: true }
+        quantity:    { type: integer }
+        unitPrice:   { type: number }
+        totalPrice:  { type: number }
+        product:
+          type: object
+          properties:
+            id:   { type: string }
+            name: { type: string }
+            slug: { type: string }
+
+    OrderTracking:
+      type: object
+      properties:
+        carrier:           { type: string }
+        trackingNumber:    { type: string }
+        trackingUrl:       { type: string, format: uri }
+        trackingStatus:    { type: string }
+        currentLocation:   { type: string }
+        estimatedDelivery: { type: string, format: date-time }
+        lastUpdated:       { type: string, format: date-time }
+
+    OrderSummary:
+      type: object
+      properties:
+        id:            { type: string, format: uuid }
+        orderNumber:   { type: string }
+        status:        { type: string }
+        paymentStatus: { type: string }
+        totalAmount:   { type: number }
+        itemCount:     { type: integer }
+        createdAt:     { type: string, format: date-time }
+
+    Order:
+      allOf:
+        - $ref: '#/components/schemas/OrderSummary'
+        - type: object
+          properties:
+            subtotal:     { type: number }
+            taxAmount:    { type: number }
+            shippingCost: { type: number }
+            items:
+              type: array
+              items:
+                $ref: '#/components/schemas/OrderItem'
+            shippingAddress:
+              $ref: '#/components/schemas/Address'
+            billingAddress:
+              $ref: '#/components/schemas/Address'
+            tracking:
+              $ref: '#/components/schemas/OrderTracking'
+
+    ReasonRequest:
+      type: object
+      required: [reason]
+      properties:
+        reason: { type: string, minLength: 5, maxLength: 500 }
+
+    NoteRequest:
+      type: object
+      required: [content]
+      properties:
+        content: { type: string, minLength: 1, maxLength: 1000 }

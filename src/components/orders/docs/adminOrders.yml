@@ -1,0 +1,389 @@
+paths:
+  /api/v1/admin-orders/orders:
+    get:
+      tags: [Admin — Orders]
+      summary: List all orders
+      description: Admin view of all platform orders with rich filtering.
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: page
+          in: query
+          schema: { type: integer, default: 1 }
+        - name: limit
+          in: query
+          schema: { type: integer, default: 20 }
+        - name: status
+          in: query
+          schema: { type: string, enum: [pending, confirmed, processing, shipped, delivered, cancelled, refunded] }
+        - name: paymentStatus
+          in: query
+          schema: { type: string, enum: [pending, paid, failed, refunded] }
+        - name: userId
+          in: query
+          schema: { type: string, format: uuid }
+        - name: vendorId
+          in: query
+          schema: { type: string, format: uuid }
+        - name: startDate
+          in: query
+          schema: { type: string, format: date }
+        - name: endDate
+          in: query
+          schema: { type: string, format: date }
+        - name: minAmount
+          in: query
+          schema: { type: number }
+        - name: maxAmount
+          in: query
+          schema: { type: number }
+        - name: search
+          in: query
+          description: Search by order number, customer name or email
+          schema: { type: string }
+      responses:
+        '200':
+          description: Paginated order list
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  orders:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/AdminOrderSummary'
+                  pagination:
+                    $ref: '#/components/schemas/Pagination'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+
+  /api/v1/admin-orders/dashboard/orders:
+    get:
+      tags: [Admin — Orders]
+      summary: Admin order dashboard stats
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Dashboard statistics
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminDashboardStats'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+
+  /api/v1/admin-orders/orders/{id}:
+    get:
+      tags: [Admin — Orders]
+      summary: Get order by ID (admin)
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/IdParam'
+      responses:
+        '200':
+          description: Full order details with customer and vendor info
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+
+  /api/v1/admin-orders/orders/{id}/status:
+    put:
+      tags: [Admin — Orders]
+      summary: Update order status
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/IdParam'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateOrderStatusRequest'
+            example:
+              status: confirmed
+              reason: Payment verified
+      responses:
+        '200':
+          description: Status updated and customer notified
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+
+  /api/v1/admin-orders/orders/{id}/confirm:
+    put:
+      tags: [Admin — Orders]
+      summary: Confirm order & mark as paid
+      description: Confirms a pending order and sets payment status to `paid`.
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/IdParam'
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ConfirmOrderRequest'
+      responses:
+        '200':
+          description: Order confirmed
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+
+  /api/v1/admin-orders/orders/{id}/history:
+    get:
+      tags: [Admin — Orders]
+      summary: Get order status history
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/IdParam'
+      responses:
+        '200':
+          description: Status change log
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+
+  /api/v1/admin-orders/orders/{id}/notes:
+    post:
+      tags: [Admin — Orders]
+      summary: Add admin note to order
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/IdParam'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AdminNoteRequest'
+      responses:
+        '201':
+          description: Note added
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+
+  /api/v1/admin-orders/orders/cancellations:
+    get:
+      tags: [Admin — Orders]
+      summary: List cancellation requests
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: status
+          in: query
+          schema: { type: string, enum: [pending, approved, rejected], default: pending }
+      responses:
+        '200':
+          description: Cancellation requests
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+
+  /api/v1/admin-orders/orders/cancellations/{id}:
+    put:
+      tags: [Admin — Orders]
+      summary: Process cancellation request
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/IdParam'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProcessCancellationRequest'
+            example:
+              action: approve
+              adminNotes: Refund issued
+      responses:
+        '200':
+          description: Request processed
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+
+  /api/v1/admin-orders/orders/returns:
+    get:
+      tags: [Admin — Orders]
+      summary: List return requests
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Return requests
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+
+  /api/v1/admin-orders/orders/returns/{id}:
+    put:
+      tags: [Admin — Orders]
+      summary: Process return request
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/IdParam'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProcessReturnRequest'
+      responses:
+        '200':
+          description: Return request processed
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+
+  /api/v1/admin-orders/orders/{id}/refund:
+    post:
+      tags: [Admin — Orders]
+      summary: Process a refund
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/IdParam'
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProcessRefundRequest'
+      responses:
+        '200':
+          description: Refund processed
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+
+components:
+  schemas:
+    AdminOrderSummary:
+      type: object
+      properties:
+        id:            { type: string, format: uuid }
+        orderNumber:   { type: string }
+        status:        { type: string }
+        paymentStatus: { type: string }
+        totalAmount:   { type: number }
+        createdAt:     { type: string, format: date-time }
+        user:
+          type: object
+          properties:
+            id:        { type: string }
+            firstName: { type: string }
+            lastName:  { type: string }
+            email:     { type: string }
+
+    AdminDashboardStats:
+      type: object
+      properties:
+        totalOrders:   { type: integer }
+        totalRevenue:  { type: number }
+        ordersToday:   { type: integer }
+        revenueToday:  { type: number }
+        ordersByStatus:
+          type: array
+          items:
+            type: object
+            properties:
+              status: { type: string }
+              count:  { type: integer }
+        pendingActions:
+          type: object
+          properties:
+            cancellations: { type: integer }
+            returns:       { type: integer }
+
+    UpdateOrderStatusRequest:
+      type: object
+      required: [status]
+      properties:
+        status:
+          type: string
+          enum: [pending, confirmed, processing, shipped, delivered, cancelled, refunded]
+        reason: { type: string }
+
+    ConfirmOrderRequest:
+      type: object
+      properties:
+        paymentReference: { type: string }
+
+    AdminNoteRequest:
+      type: object
+      required: [content]
+      properties:
+        content:             { type: string, minLength: 1, maxLength: 1000 }
+        isVisibleToCustomer: { type: boolean, default: false }
+
+    ProcessCancellationRequest:
+      type: object
+      required: [action]
+      properties:
+        action:     { type: string, enum: [approve, reject] }
+        adminNotes: { type: string }
+
+    ProcessReturnRequest:
+      type: object
+      required: [action]
+      properties:
+        action:       { type: string, enum: [approve, reject] }
+        adminNotes:   { type: string }
+        refundAmount: { type: number }
+
+    ProcessRefundRequest:
+      type: object
+      properties:
+        refundAmount:
+          type: number
+          description: Defaults to the full order amount if omitted
+        refundMethod:
+          type: string
+          enum: [original_payment, bank_transfer, store_credit]
+          default: original_payment
+        notes: { type: string }

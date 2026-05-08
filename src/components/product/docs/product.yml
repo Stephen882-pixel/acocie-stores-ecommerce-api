@@ -1,0 +1,333 @@
+paths:
+  /api/v1/products:
+    get:
+      tags: [Products]
+      summary: List products
+      description: Returns a paginated product catalogue. Supports filtering by category, price range, vendor, and status.
+      parameters:
+        - name: page
+          in: query
+          schema: { type: integer, default: 1 }
+        - name: limit
+          in: query
+          schema: { type: integer, default: 20 }
+        - name: category
+          in: query
+          description: Filter by category UUID
+          schema: { type: string, format: uuid }
+        - name: minPrice
+          in: query
+          schema: { type: number }
+        - name: maxPrice
+          in: query
+          schema: { type: number }
+        - name: status
+          in: query
+          schema: { type: string, enum: [active, draft, archived] }
+        - name: featured
+          in: query
+          schema: { type: string, enum: [true, false] }
+        - name: vendor
+          in: query
+          description: Filter by vendor UUID
+          schema: { type: string, format: uuid }
+        - name: sortBy
+          in: query
+          schema: { type: string, enum: [created_at, price, name, viewCount, soldCount] }
+        - name: order
+          in: query
+          schema: { type: string, enum: [ASC, DESC], default: DESC }
+      responses:
+        '200':
+          description: Product list
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  products:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/ProductSummary'
+                  pagination:
+                    $ref: '#/components/schemas/Pagination'
+
+    post:
+      tags: [Products]
+      summary: Create a product
+      description: Vendor or admin only. Creates a new product with inventory, images, and optional variants.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateProductRequest'
+            example:
+              categoryId: "3fa85f64-5717-4562-b3fc-2c963f66afa6"
+              name: Wireless Headphones
+              sku: WH-BLK-001
+              price: 4999.00
+              stockQuantity: 50
+              status: active
+              images:
+                - url: "https://cdn.acocie.com/products/wh-blk-001.jpg"
+                  altText: Wireless Headphones
+      responses:
+        '201':
+          description: Product created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Product'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '409':
+          description: SKU already exists
+          content:
+            application/json:
+              example: { error: SKU already exists }
+
+  /api/v1/products/search:
+    get:
+      tags: [Products]
+      summary: Search products
+      description: Full-text search across product name, description, and tags.
+      parameters:
+        - name: q
+          in: query
+          required: true
+          schema: { type: string }
+        - name: page
+          in: query
+          schema: { type: integer, default: 1 }
+        - name: limit
+          in: query
+          schema: { type: integer, default: 20 }
+      responses:
+        '200':
+          description: Search results
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  query:    { type: string }
+                  products: { type: array, items: { $ref: '#/components/schemas/ProductSummary' } }
+                  pagination: { $ref: '#/components/schemas/Pagination' }
+        '400':
+          $ref: '#/components/responses/ValidationError'
+
+  /api/v1/products/featured:
+    get:
+      tags: [Products]
+      summary: Get featured products
+      responses:
+        '200':
+          description: Featured products
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ProductSummary'
+
+  /api/v1/products/{id}:
+    get:
+      tags: [Products]
+      summary: Get product by ID
+      description: Returns full product details including variants, images, and inventory. Increments view count.
+      parameters:
+        - $ref: '#/components/parameters/IdParam'
+      responses:
+        '200':
+          description: Full product details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Product'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+
+    put:
+      tags: [Products]
+      summary: Update a product
+      description: Vendor (own products only) or admin.
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/IdParam'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateProductRequest'
+      responses:
+        '200':
+          description: Product updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Product'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+
+    delete:
+      tags: [Products]
+      summary: Delete a product
+      description: Vendor (own products only) or admin. Removes images, variants, and inventory records.
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/IdParam'
+      responses:
+        '200':
+          description: Product deleted
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+
+components:
+  schemas:
+    ProductImage:
+      type: object
+      properties:
+        url:          { type: string, format: uri }
+        altText:      { type: string }
+
+    ProductImageFull:
+      type: object
+      properties:
+        id:           { type: string, format: uuid }
+        imageUrl:     { type: string, format: uri }
+        altText:      { type: string }
+        isPrimary:    { type: boolean }
+        displayOrder: { type: integer }
+
+    ProductVariantRequest:
+      type: object
+      required: [sku, name, price]
+      properties:
+        sku:           { type: string }
+        name:          { type: string }
+        options:       { type: object, description: "e.g. { color: red, size: M }" }
+        price:         { type: number }
+        comparePrice:  { type: number }
+        stockQuantity: { type: integer, default: 0 }
+        imageUrl:      { type: string, format: uri }
+        isActive:      { type: boolean, default: true }
+
+    ProductVariant:
+      allOf:
+        - type: object
+          properties:
+            id: { type: string, format: uuid }
+        - $ref: '#/components/schemas/ProductVariantRequest'
+
+    ProductSummary:
+      type: object
+      properties:
+        id:           { type: string, format: uuid }
+        name:         { type: string }
+        slug:         { type: string }
+        sku:          { type: string }
+        price:        { type: number }
+        comparePrice: { type: number }
+        status:       { type: string }
+        isFeatured:   { type: boolean }
+        viewCount:    { type: integer }
+        soldCount:    { type: integer }
+        category:
+          type: object
+          properties:
+            id:   { type: string }
+            name: { type: string }
+            slug: { type: string }
+        images:
+          type: array
+          items:
+            $ref: '#/components/schemas/ProductImageFull'
+
+    Product:
+      allOf:
+        - $ref: '#/components/schemas/ProductSummary'
+        - type: object
+          properties:
+            description:      { type: string }
+            shortDescription: { type: string }
+            costPrice:        { type: number }
+            stockQuantity:    { type: integer }
+            weight:           { type: number }
+            tags:             { type: array, items: { type: string } }
+            metaTitle:        { type: string }
+            metaDescription:  { type: string }
+            variants:
+              type: array
+              items:
+                $ref: '#/components/schemas/ProductVariant'
+            inventory:
+              type: object
+              properties:
+                availableStock: { type: integer }
+                reservedStock:  { type: integer }
+                totalStock:     { type: integer }
+
+    CreateProductRequest:
+      type: object
+      required: [categoryId, name, sku, price]
+      properties:
+        categoryId:        { type: string, format: uuid }
+        name:              { type: string, minLength: 2, maxLength: 255 }
+        sku:               { type: string, minLength: 2, maxLength: 100 }
+        price:             { type: number, minimum: 0 }
+        vendorId:          { type: string, format: uuid, description: Admin use only }
+        description:       { type: string }
+        shortDescription:  { type: string }
+        comparePrice:      { type: number }
+        costPrice:         { type: number }
+        stockQuantity:     { type: integer, default: 0 }
+        lowStockThreshold: { type: integer, default: 5 }
+        weight:            { type: number }
+        tags:              { type: array, items: { type: string } }
+        metaTitle:         { type: string }
+        metaDescription:   { type: string }
+        status:            { type: string, enum: [draft, active, archived], default: draft }
+        isFeatured:        { type: boolean, default: false }
+        images:            { type: array, items: { $ref: '#/components/schemas/ProductImage' } }
+        variants:          { type: array, items: { $ref: '#/components/schemas/ProductVariantRequest' } }
+
+    UpdateProductRequest:
+      type: object
+      minProperties: 1
+      properties:
+        categoryId:        { type: string, format: uuid }
+        name:              { type: string, minLength: 2 }
+        sku:               { type: string }
+        price:             { type: number }
+        description:       { type: string }
+        shortDescription:  { type: string }
+        comparePrice:      { type: number }
+        costPrice:         { type: number }
+        stockQuantity:     { type: integer }
+        lowStockThreshold: { type: integer }
+        weight:            { type: number }
+        tags:              { type: array, items: { type: string } }
+        metaTitle:         { type: string }
+        metaDescription:   { type: string }
+        status:            { type: string, enum: [draft, active, archived] }
+        isFeatured:        { type: boolean }

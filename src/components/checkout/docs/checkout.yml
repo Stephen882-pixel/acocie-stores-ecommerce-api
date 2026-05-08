@@ -1,0 +1,142 @@
+paths:
+  /api/v1/checkout/initiate:
+    post:
+      tags: [Checkout]
+      summary: Initiate checkout
+      description: |
+        Validates the cart and temporarily reserves stock. Must be called before `place-order`.  
+        Returns an error with details if any items are unavailable or out of stock.
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Checkout initiated — stock reserved
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  cartId:    { type: string, format: uuid }
+                  itemCount: { type: integer }
+        '400':
+          description: Cart empty or validation failed
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:   { type: string }
+                  details: { type: array, items: { type: string } }
+              example:
+                error: Cart validation failed
+                details:
+                  - "Wireless Headphones: Only 1 in stock"
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /api/v1/checkout/summary:
+    get:
+      tags: [Checkout]
+      summary: Get checkout summary
+      description: Returns the full order preview — items, saved addresses, and calculated totals — before placing the order.
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: shippingAddressId
+          in: query
+          description: Pre-select a shipping address
+          schema: { type: string, format: uuid }
+      responses:
+        '200':
+          description: Checkout summary
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CheckoutSummaryResponse'
+        '400':
+          description: Cart is empty
+          content:
+            application/json:
+              example: { error: Cart is empty }
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /api/v1/checkout/place-order:
+    post:
+      tags: [Checkout]
+      summary: Place order
+      description: |
+        Creates the order from the current cart. Requires a shipping address.  
+        On success, the cart is cleared and an order confirmation email is sent.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PlaceOrderRequest'
+            example:
+              shippingAddressId: "3fa85f64-5717-4562-b3fc-2c963f66afa6"
+              paymentMethod: cash_on_delivery
+      responses:
+        '201':
+          description: Order placed successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PlaceOrderResponse'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '404':
+          description: Shipping address not found
+          content:
+            application/json:
+              example: { error: Shipping address not found }
+
+components:
+  schemas:
+    CheckoutSummaryResponse:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            type: object
+            properties:
+              productId:   { type: string, format: uuid }
+              productName: { type: string }
+              variantName: { type: string }
+              quantity:    { type: integer }
+              unitPrice:   { type: number }
+        addresses:
+          type: array
+          items:
+            $ref: '#/components/schemas/Address'
+        selectedShippingAddress: { type: string, format: uuid }
+        subtotal:     { type: string, example: "9998.00" }
+        taxAmount:    { type: string, example: "1599.68" }
+        shippingCost: { type: string, example: "10.00" }
+        totalAmount:  { type: string, example: "11607.68" }
+
+    PlaceOrderRequest:
+      type: object
+      required: [shippingAddressId]
+      properties:
+        shippingAddressId: { type: string, format: uuid }
+        billingAddressId:  { type: string, format: uuid }
+        paymentMethod:
+          type: string
+          enum: [cash_on_delivery, card, mobile_money, bank_transfer]
+          default: cash_on_delivery
+        notes: { type: string, maxLength: 1000 }
+
+    PlaceOrderResponse:
+      type: object
+      properties:
+        message:     { type: string }
+        orderNumber: { type: string, example: ORD-20260508-00042 }
+        orderId:     { type: string, format: uuid }
+        totalAmount: { type: string }

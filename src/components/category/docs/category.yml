@@ -1,0 +1,186 @@
+paths:
+  /api/v1/categories:
+    get:
+      tags: [Categories]
+      summary: List all categories
+      description: Returns active categories. Admins can request inactive ones. Pass `nested=true` for a hierarchical tree.
+      parameters:
+        - name: nested
+          in: query
+          description: Return categories as a nested tree
+          schema: { type: string, enum: [true, false] }
+        - name: includeInactive
+          in: query
+          description: Include inactive categories (admin only)
+          schema: { type: string, enum: [true, false] }
+      responses:
+        '200':
+          description: Category list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Category'
+
+    post:
+      tags: [Categories]
+      summary: Create a category
+      description: Admin only. Creates a new product category.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateCategoryRequest'
+            example:
+              name: Electronics
+              description: Consumer electronics and accessories
+              isActive: true
+              displayOrder: 1
+      responses:
+        '201':
+          description: Category created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Category'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+
+  /api/v1/categories/{id}:
+    get:
+      tags: [Categories]
+      summary: Get category by ID
+      parameters:
+        - $ref: '#/components/parameters/IdParam'
+        - name: includeProducts
+          in: query
+          description: Include up to 20 active products in the response
+          schema: { type: string, enum: [true, false] }
+      responses:
+        '200':
+          description: Category details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CategoryDetail'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+
+    put:
+      tags: [Categories]
+      summary: Update a category
+      description: Admin only.
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/IdParam'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateCategoryRequest'
+      responses:
+        '200':
+          description: Category updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Category'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+
+    delete:
+      tags: [Categories]
+      summary: Delete a category
+      description: Admin only. Fails if the category has products or subcategories.
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/IdParam'
+      responses:
+        '200':
+          description: Category deleted
+        '400':
+          description: Cannot delete — category has products or subcategories
+          content:
+            application/json:
+              example: { error: Cannot delete category with existing products }
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+
+components:
+  schemas:
+    Category:
+      type: object
+      properties:
+        id:              { type: string, format: uuid }
+        name:            { type: string }
+        slug:            { type: string }
+        description:     { type: string }
+        parentId:        { type: string, format: uuid, nullable: true }
+        imageUrl:        { type: string, format: uri }
+        isActive:        { type: boolean }
+        displayOrder:    { type: integer }
+        metaTitle:       { type: string }
+        metaDescription: { type: string }
+
+    CategoryDetail:
+      allOf:
+        - $ref: '#/components/schemas/Category'
+        - type: object
+          properties:
+            parent:
+              type: object
+              properties:
+                id:   { type: string }
+                name: { type: string }
+                slug: { type: string }
+            children:
+              type: array
+              items:
+                $ref: '#/components/schemas/Category'
+
+    CreateCategoryRequest:
+      type: object
+      required: [name]
+      properties:
+        name:            { type: string, minLength: 2, maxLength: 100 }
+        description:     { type: string }
+        parentId:        { type: string, format: uuid }
+        imageUrl:        { type: string, format: uri }
+        isActive:        { type: boolean, default: true }
+        displayOrder:    { type: integer, default: 0 }
+        metaTitle:       { type: string }
+        metaDescription: { type: string }
+
+    UpdateCategoryRequest:
+      type: object
+      minProperties: 1
+      properties:
+        name:            { type: string, minLength: 2, maxLength: 100 }
+        description:     { type: string }
+        parentId:        { type: string, format: uuid }
+        imageUrl:        { type: string, format: uri }
+        isActive:        { type: boolean }
+        displayOrder:    { type: integer }
+        metaTitle:       { type: string }
+        metaDescription: { type: string }

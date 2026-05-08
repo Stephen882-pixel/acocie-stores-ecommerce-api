@@ -3,6 +3,8 @@ const express = require('express');
 const helmet = require('helmet');
 const cors = require('cors');
 const morgan = require('morgan');
+const { apiReference } = require('@scalar/express-api-reference');
+const openApiSpec = require('./src/docs/openapi.config');
 require('dotenv').config();
 
 const { sequelize, testConnection } = require('./src/config/database');
@@ -21,6 +23,15 @@ const adminOrderRoutes = require('./src/components/orders/routes/adminOrderRoute
 const app = express();
 
 app.use(helmet())
+
+// Scalar API docs — relax helmet's CSP only on the docs route
+app.use('/api-docs', (req, res, next) => {
+    res.setHeader(
+        'Content-Security-Policy',
+        "default-src 'self'; script-src 'self' 'unsafe-inline' cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' fonts.googleapis.com cdn.jsdelivr.net; font-src 'self' fonts.gstatic.com; img-src 'self' data:; connect-src 'self'"
+    );
+    next();
+}, apiReference({ spec: { content: openApiSpec }, theme: 'purple' }));
 
 
 app.use(cors({
@@ -115,7 +126,8 @@ app.get('/', (req, res) => {
       orders: '/api/v1/orders',              
       vendor: '/api/v1/vendor',              
       adminOrders: '/api/v1/admin-orders',   
-      health: '/health'
+      health: '/health',
+      docs: '/api-docs'
     }
   });
 });
@@ -168,6 +180,7 @@ const startServer = async () => {
             console.log(`  ${DIM}Port        ${RESET}  ${BOLD}${GREEN}${PORT}${RESET}`);
             console.log(`  ${DIM}URL         ${RESET}  ${CYAN}http://localhost:${PORT}${RESET}`);
             console.log(`  ${DIM}Health      ${RESET}  ${CYAN}http://localhost:${PORT}/health${RESET}`);
+            console.log(`  ${DIM}API Docs    ${RESET}  ${CYAN}http://localhost:${PORT}/api-docs${RESET}`);
             console.log(`  ${DIM}Started at  ${RESET}  ${new Date().toLocaleTimeString()}\n`);
         });
     } catch(error){

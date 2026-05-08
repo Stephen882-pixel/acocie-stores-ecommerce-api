@@ -1,0 +1,344 @@
+paths:
+  /api/v1/auth/register:
+    post:
+      tags: [Auth]
+      summary: Register a new account
+      description: Creates a customer or vendor account and sends a 6-digit OTP to the provided email.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SignupRequest'
+            example:
+              firstName: Jane
+              lastName: Doe
+              email: jane@example.com
+              password: Secret123
+              phone: "+254712345678"
+              role: customer
+      responses:
+        '201':
+          description: Account created — OTP sent to email
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SignupResponse'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '409':
+          $ref: '#/components/responses/ConflictError'
+
+  /api/v1/auth/verify-otp:
+    post:
+      tags: [Auth]
+      summary: Verify email with OTP
+      description: Confirms email ownership using the 6-digit OTP sent during registration.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VerifyOTPRequest'
+            example:
+              email: jane@example.com
+              otpCode: "482910"
+      responses:
+        '200':
+          description: Email verified successfully
+          content:
+            application/json:
+              example:
+                message: Email verified successfully! You can now log in.
+        '400':
+          $ref: '#/components/responses/ValidationError'
+
+  /api/v1/auth/login:
+    post:
+      tags: [Auth]
+      summary: Log in
+      description: Authenticates a verified user and returns an access token + refresh token.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+            example:
+              email: jane@example.com
+              password: Secret123
+      responses:
+        '200':
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LoginResponse'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          description: Email not verified
+          content:
+            application/json:
+              example:
+                error: Please verify your email first
+                needsVerification: true
+
+  /api/v1/auth/refresh-token:
+    post:
+      tags: [Auth]
+      summary: Refresh access token
+      description: Issues a new short-lived access token using a valid refresh token.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RefreshTokenRequest'
+      responses:
+        '200':
+          description: New access token issued
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RefreshTokenResponse'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /api/v1/auth/forgot-password:
+    post:
+      tags: [Auth]
+      summary: Request password reset OTP
+      description: Sends a password-reset OTP to the email address (always returns the same message to prevent email enumeration).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ForgotPasswordRequest'
+            example:
+              email: jane@example.com
+      responses:
+        '200':
+          description: OTP sent if email exists
+          content:
+            application/json:
+              example:
+                message: If email exists, an OTP has been sent
+        '400':
+          $ref: '#/components/responses/ValidationError'
+
+  /api/v1/auth/verify-reset-otp:
+    post:
+      tags: [Auth]
+      summary: Verify password reset OTP
+      description: Validates the OTP received via the forgot-password flow before allowing a new password to be set.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VerifyOTPRequest'
+      responses:
+        '200':
+          description: OTP verified — proceed to reset password
+          content:
+            application/json:
+              example:
+                message: OTP verified. You can now reset your password.
+                email: jane@example.com
+        '400':
+          $ref: '#/components/responses/ValidationError'
+
+  /api/v1/auth/reset-password:
+    post:
+      tags: [Auth]
+      summary: Reset password
+      description: Sets a new password after successfully verifying the reset OTP.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ResetPasswordRequest'
+      responses:
+        '200':
+          description: Password reset successfully
+          content:
+            application/json:
+              example:
+                message: Password reset successfully. Please login with your new password.
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+
+  /api/v1/auth/logout:
+    post:
+      tags: [Auth]
+      summary: Log out
+      description: Invalidates the refresh token so it cannot be reused.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LogoutRequest'
+      responses:
+        '200':
+          description: Logged out successfully
+          content:
+            application/json:
+              example:
+                message: Logged out successfully
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /api/v1/auth/change-password:
+    post:
+      tags: [Auth]
+      summary: Change password
+      description: Changes the authenticated user's password. Invalidates all active refresh tokens on success.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ChangePasswordRequest'
+      responses:
+        '200':
+          description: Password changed successfully
+          content:
+            application/json:
+              example:
+                message: Password changed successfully
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+components:
+  schemas:
+    SignupRequest:
+      type: object
+      required: [firstName, lastName, email, password]
+      properties:
+        firstName:
+          type: string
+          minLength: 2
+          maxLength: 50
+          example: Jane
+        lastName:
+          type: string
+          minLength: 2
+          maxLength: 50
+          example: Doe
+        email:
+          type: string
+          format: email
+          example: jane@example.com
+        password:
+          type: string
+          minLength: 8
+          description: Must contain at least one uppercase, one lowercase, and one number
+          example: Secret123
+        phone:
+          type: string
+          description: International format
+          example: "+254712345678"
+        role:
+          type: string
+          enum: [customer, vendor]
+          default: customer
+
+    SignupResponse:
+      type: object
+      properties:
+        message:  { type: string }
+        email:    { type: string }
+        userId:   { type: string, format: uuid }
+        userRole: { type: string }
+
+    VerifyOTPRequest:
+      type: object
+      required: [email, otpCode]
+      properties:
+        email:
+          type: string
+          format: email
+        otpCode:
+          type: string
+          minLength: 6
+          maxLength: 6
+          pattern: '^\d{6}$'
+          example: "482910"
+
+    LoginRequest:
+      type: object
+      required: [email, password]
+      properties:
+        email:    { type: string, format: email }
+        password: { type: string }
+
+    LoginResponse:
+      type: object
+      properties:
+        message:      { type: string }
+        accessToken:  { type: string }
+        refreshToken: { type: string }
+        user:
+          type: object
+          properties:
+            id:         { type: string, format: uuid }
+            firstName:  { type: string }
+            lastName:   { type: string }
+            email:      { type: string }
+            role:       { type: string }
+            isVerified: { type: boolean }
+
+    RefreshTokenRequest:
+      type: object
+      required: [refreshToken]
+      properties:
+        refreshToken: { type: string }
+
+    RefreshTokenResponse:
+      type: object
+      properties:
+        message:     { type: string }
+        accessToken: { type: string }
+
+    ForgotPasswordRequest:
+      type: object
+      required: [email]
+      properties:
+        email: { type: string, format: email }
+
+    ResetPasswordRequest:
+      type: object
+      required: [email, newPassword, confirmPassword]
+      properties:
+        email:           { type: string, format: email }
+        newPassword:     { type: string, minLength: 8 }
+        confirmPassword: { type: string }
+
+    LogoutRequest:
+      type: object
+      properties:
+        refreshToken: { type: string }
+
+    ChangePasswordRequest:
+      type: object
+      required: [currentPassword, newPassword, confirmPassword]
+      properties:
+        currentPassword: { type: string }
+        newPassword:     { type: string, minLength: 8 }
+        confirmPassword: { type: string }
