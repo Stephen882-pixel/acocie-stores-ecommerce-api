@@ -37,10 +37,17 @@ const ORDER = {
 
 module.exports = {
   async up(queryInterface) {
-    const now         = new Date();
-    const twoDaysAgo  = new Date(Date.now() - 2 * 24 * 60 * 60 * 1000);
+    const now          = new Date();
+    const twoDaysAgo   = new Date(Date.now() - 2 * 24 * 60 * 60 * 1000);
     const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
-    const oneHourAgo  = new Date(Date.now() - 60 * 60 * 1000);
+    const oneHourAgo   = new Date(Date.now() - 60 * 60 * 1000);
+
+    // Skip entirely if seed data already present
+    const [existing] = await queryInterface.sequelize.query(
+      `SELECT 1 FROM orders WHERE id = '${ORDER.o1}' LIMIT 1`,
+      { type: queryInterface.sequelize.QueryTypes.SELECT }
+    );
+    if (existing) return;
 
     // ── ORDERS ────────────────────────────────────────────────────────────────
     await queryInterface.bulkInsert('orders', [
@@ -136,7 +143,7 @@ module.exports = {
         created_at:          sevenDaysAgo,
         updated_at:          twoDaysAgo,
       },
-    ], {});
+    ], { ignoreDuplicates: true });
 
     // ── ORDER ITEMS ───────────────────────────────────────────────────────────
     await queryInterface.bulkInsert('order_items', [

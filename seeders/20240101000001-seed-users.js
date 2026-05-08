@@ -127,7 +127,7 @@ module.exports = {
         created_at:        now,
         updated_at:        now,
       },
-    ], {});
+    ], { ignoreDuplicates: true });
   },
 
   async down(queryInterface) {

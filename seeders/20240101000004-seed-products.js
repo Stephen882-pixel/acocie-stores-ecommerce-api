@@ -45,6 +45,13 @@ module.exports = {
   async up(queryInterface) {
     const now = new Date();
 
+    // Skip entirely if seed data already present
+    const [existing] = await queryInterface.sequelize.query(
+      `SELECT 1 FROM products WHERE id = '${PROD.galaxyS24}' LIMIT 1`,
+      { type: queryInterface.sequelize.QueryTypes.SELECT }
+    );
+    if (existing) return;
+
     // ── PRODUCTS ─────────────────────────────────────────────────────────────
     await queryInterface.bulkInsert('products', [
       {
@@ -216,7 +223,7 @@ module.exports = {
 
     // ── PRODUCT IMAGES ────────────────────────────────────────────────────────
     await queryInterface.bulkInsert('product_images', [
-      { id: uuidv4(), product_id: PROD.galaxyS24,  image_url: 'https://placehold.co/800x800?text=Galaxy+S24',   alt_text: 'Samsung Galaxy S24 Front', is_primary: true,  display_order: 1, created_at: now, updated_at: now },
+      { id: uuidv4(), product_id: PROD.galaxyS24, image_url: 'https://placehold.co/800x800?text=Galaxy+S24',   alt_text: 'Samsung Galaxy S24 Front', is_primary: true,  display_order: 1, created_at: now, updated_at: now },
       { id: uuidv4(), product_id: PROD.galaxyS24,  image_url: 'https://placehold.co/800x800?text=Galaxy+S24+Back', alt_text: 'Samsung Galaxy S24 Back', is_primary: false, display_order: 2, created_at: now, updated_at: now },
       { id: uuidv4(), product_id: PROD.iphone15,   image_url: 'https://placehold.co/800x800?text=iPhone+15',    alt_text: 'Apple iPhone 15',          is_primary: true,  display_order: 1, created_at: now, updated_at: now },
       { id: uuidv4(), product_id: PROD.iphone15,   image_url: 'https://placehold.co/800x800?text=iPhone+15+Side', alt_text: 'iPhone 15 side view',    is_primary: false, display_order: 2, created_at: now, updated_at: now },
@@ -245,7 +252,7 @@ module.exports = {
       // Floral Dress
       { id: VAR.floraDress_S, product_id: PROD.floraDress, sku: 'DRESS-FLORA-RED-S', name: 'Floral Dress – S / Red', options: JSON.stringify({ size: 'S', color: 'Red' }), price: null, stock_quantity: 25, is_active: true, created_at: now, updated_at: now },
       { id: VAR.floraDress_M, product_id: PROD.floraDress, sku: 'DRESS-FLORA-RED-M', name: 'Floral Dress – M / Red', options: JSON.stringify({ size: 'M', color: 'Red' }), price: null, stock_quantity: 35, is_active: true, created_at: now, updated_at: now },
-    ], {});
+    ], { ignoreDuplicates: true });
 
     // ── INVENTORY ─────────────────────────────────────────────────────────────
     await queryInterface.bulkInsert('inventory', [
@@ -256,7 +263,7 @@ module.exports = {
       { id: uuidv4(), product_id: PROD.slimJeans,   total_stock: 80,  available_stock: 77, reserved_stock: 3,  low_stock_alert: false, created_at: now, updated_at: now },
       { id: uuidv4(), product_id: PROD.floraDress,  total_stock: 60,  available_stock: 58, reserved_stock: 2,  low_stock_alert: false, created_at: now, updated_at: now },
       { id: uuidv4(), product_id: PROD.kettleSet,   total_stock: 40,  available_stock: 39, reserved_stock: 1,  low_stock_alert: false, created_at: now, updated_at: now },
-    ], {});
+    ], { ignoreDuplicates: false }); // uuidv4 IDs — guarded by the existence check above
   },
 
   async down(queryInterface) {

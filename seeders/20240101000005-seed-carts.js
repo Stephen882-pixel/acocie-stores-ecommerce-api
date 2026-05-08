@@ -31,6 +31,13 @@ module.exports = {
     const now     = new Date();
     const expires = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 days
 
+    // Skip entirely if seed data already present
+    const [existing] = await queryInterface.sequelize.query(
+      `SELECT 1 FROM carts WHERE id = '${CART.customer1}' LIMIT 1`,
+      { type: queryInterface.sequelize.QueryTypes.SELECT }
+    );
+    if (existing) return;
+
     await queryInterface.bulkInsert('carts', [
       {
         id:         CART.customer1,
@@ -56,7 +63,7 @@ module.exports = {
         created_at: now,
         updated_at: now,
       },
-    ], {});
+    ], { ignoreDuplicates: true });
 
     await queryInterface.bulkInsert('cart_items', [
       // customer1 cart — Galaxy S24 (128GB) x1
@@ -114,7 +121,7 @@ module.exports = {
         created_at:        now,
         updated_at:        now,
       },
-    ], {});
+    ], {}); // uuidv4 IDs — guarded by the existence check above
   },
 
   async down(queryInterface) {
