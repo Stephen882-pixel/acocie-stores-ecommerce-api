@@ -1,0 +1,28 @@
+node_modules
+npm-debug.log*
+
+.env
+.env.*
+!.env.example
+
+.git
+.gitignore
+
+# Logs
+logs/
+*.log
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Editor
+.vscode/
+.idea/
+
+# Test / coverage
+coverage/
+*.test.js
+
+# Nodemon config (dev only)
+nodemon.json
