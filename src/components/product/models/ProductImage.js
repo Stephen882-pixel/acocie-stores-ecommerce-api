@@ -23,6 +23,12 @@ module.exports = (sequelize) => {
       allowNull: false,
       field: 'image_url'
     },
+    s3Key: {
+      type: DataTypes.STRING(700),
+      allowNull: true,
+      field: 's3_key',
+      comment: 'S3 object key – used to delete the file when this image record is removed'
+    },
     altText: {
       type: DataTypes.STRING(255),
       allowNull: true,

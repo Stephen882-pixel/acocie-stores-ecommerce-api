@@ -2,6 +2,7 @@
 
 const { sequelize, Product, Category, ProductImage, ProductVariant, Inventory, User } = require('../../../models');
 const { Op } = require('sequelize');
+const { deleteFromS3 } = require('../../../helpers/s3.helper');
 
 const createError = (message, statusCode) => {
     const error = new Error(message);
@@ -89,12 +90,21 @@ const getProductById = async (id, userRole) => {
     return product;
 };
 
-const createProduct = async (body, userRole, requestingUserId) => {
+/**
+ * createProduct
+ *
+ * @param {object}  fields               - parsed form fields (from controller)
+ * @param {Array}   uploadedImages        - [{ key, url }] from S3 for the product gallery
+ * @param {Array}   uploadedVariantImages - [{ key, url }] from S3 for per-variant images
+ * @param {string}  userRole
+ * @param {string}  requestingUserId
+ */
+const createProduct = async (fields, uploadedImages = [], uploadedVariantImages = [], userRole, requestingUserId) => {
     const {
         categoryId, name, description, shortDescription, sku, price, comparePrice, costPrice,
         stockQuantity, lowStockThreshold, weight, dimensions, tags, metaTitle, metaDescription,
-        status, isFeatured, images, variants
-    } = body;
+        status, isFeatured, variants
+    } = fields;
 
     if (!categoryId || !name || !sku || !price) {
         throw createError('Missing required fields: categoryId, name, sku, price', 400);
@@ -114,7 +124,7 @@ const createProduct = async (body, userRole, requestingUserId) => {
         counter++;
     }
 
-    const vendorId = userRole === 'vendor' ? requestingUserId : (body.vendorId || requestingUserId);
+    const vendorId = userRole === 'vendor' ? requestingUserId : (fields.vendorId || requestingUserId);
 
     const product = await Product.create({
         vendorId,
@@ -134,7 +144,7 @@ const createProduct = async (body, userRole, requestingUserId) => {
         tags: tags || [],
         metaTitle,
         metaDescription,
-        status: status || 'draft',
+        status: status || 'active',
         isFeatured: isFeatured || false
     });
 
@@ -146,30 +156,44 @@ const createProduct = async (body, userRole, requestingUserId) => {
         lowStockAlert: (stockQuantity || 0) <= (lowStockThreshold || 5)
     });
 
-    if (images && Array.isArray(images)) {
-        for (let i = 0; i < images.length; i++) {
-            await ProductImage.create({
-                productId: product.id,
-                imageUrl: images[i].url,
-                altText: images[i].altText || name,
-                isPrimary: i === 0,
-                displayOrder: i
-            });
-        }
+    // Persist S3-uploaded gallery images
+    for (let i = 0; i < uploadedImages.length; i++) {
+        await ProductImage.create({
+            productId:    product.id,
+            imageUrl:     uploadedImages[i].url,
+            s3Key:        uploadedImages[i].key,
+            altText:      name,
+            isPrimary:    i === 0,
+            displayOrder: i
+        });
     }
 
+    // Persist variants – assign S3 variant images by index if provided
     if (variants && Array.isArray(variants)) {
-        for (const variant of variants) {
+        for (let i = 0; i < variants.length; i++) {
+            const variant = variants[i];
+            const variantImageUrl = uploadedVariantImages[i]?.url || variant.imageUrl || null;
+
+            // options may arrive as a JSON string if the client double-encoded it
+            let options = variant.options;
+            if (typeof options === 'string') {
+                try { options = JSON.parse(options); } catch { options = {}; }
+            }
+            if (!options || typeof options !== 'object') options = {};
+
+            if (!variant.sku) throw createError(`Variant at index ${i} is missing required field: sku`, 400);
+            if (!variant.name) throw createError(`Variant at index ${i} is missing required field: name`, 400);
+
             await ProductVariant.create({
-                productId: product.id,
-                sku: variant.sku,
-                name: variant.name,
-                options: variant.options,
-                price: variant.price,
+                productId:    product.id,
+                sku:          variant.sku,
+                name:         variant.name,
+                options,
+                price:        variant.price,
                 comparePrice: variant.comparePrice,
                 stockQuantity: variant.stockQuantity || 0,
-                imageUrl: variant.imageUrl,
-                isActive: variant.isActive !== false
+                imageUrl:     variantImageUrl,
+                isActive:     variant.isActive !== false
             });
         }
     }
@@ -186,7 +210,17 @@ const createProduct = async (body, userRole, requestingUserId) => {
     return completeProduct;
 };
 
-const updateProduct = async (id, updates, userRole, requestingUserId) => {
+/**
+ * updateProduct
+ *
+ * @param {string} id
+ * @param {object} fields              - parsed form fields
+ * @param {Array}  uploadedImages       - new S3 images [{ key, url }] — APPENDED to existing
+ * @param {Array}  uploadedVariantImages
+ * @param {string} userRole
+ * @param {string} requestingUserId
+ */
+const updateProduct = async (id, fields, uploadedImages = [], uploadedVariantImages = [], userRole, requestingUserId) => {
     const product = await Product.findByPk(id);
     if (!product) throw createError('Product not found', 404);
 
@@ -194,21 +228,42 @@ const updateProduct = async (id, updates, userRole, requestingUserId) => {
         throw createError('You can only update your own products', 403);
     }
 
+    const updates = { ...fields };
+    delete updates.variants; // handle variants separately below
+
     if (updates.name && updates.name !== product.name) {
         updates.slug = generateSlug(updates.name);
     }
 
+    // Remove undefined keys so we don't overwrite with null accidentally
+    Object.keys(updates).forEach((k) => updates[k] === undefined && delete updates[k]);
+
     await product.update(updates);
 
-    if (updates.stockQuantity !== undefined) {
+    if (fields.stockQuantity !== undefined) {
         await Inventory.update(
             {
-                totalStock: updates.stockQuantity,
-                availableStock: updates.stockQuantity,
-                lowStockAlert: updates.stockQuantity <= (product.lowStockThreshold || 5)
+                totalStock:    fields.stockQuantity,
+                availableStock: fields.stockQuantity,
+                lowStockAlert: fields.stockQuantity <= (product.lowStockThreshold || 5)
             },
             { where: { productId: id } }
         );
+    }
+
+    // Append new gallery images from S3
+    if (uploadedImages.length > 0) {
+        const existingCount = await ProductImage.count({ where: { productId: id } });
+        for (let i = 0; i < uploadedImages.length; i++) {
+            await ProductImage.create({
+                productId:    id,
+                imageUrl:     uploadedImages[i].url,
+                s3Key:        uploadedImages[i].key,
+                altText:      product.name,
+                isPrimary:    existingCount === 0 && i === 0,
+                displayOrder: existingCount + i
+            });
+        }
     }
 
     const updatedProduct = await Product.findByPk(id, {
@@ -231,12 +286,17 @@ const deleteProduct = async (id, userRole, requestingUserId) => {
         throw createError('You can only delete your own products', 403);
     }
 
+    const images = await ProductImage.findAll({ where: { productId: id }, attributes: ['s3Key'] });
+    const s3Keys = images.map((img) => img.s3Key).filter(Boolean);
+
     await sequelize.transaction(async (t) => {
         await ProductImage.destroy({ where: { productId: id }, transaction: t });
         await ProductVariant.destroy({ where: { productId: id }, transaction: t });
         await Inventory.destroy({ where: { productId: id }, transaction: t });
         await product.destroy({ transaction: t });
     });
+
+    await Promise.allSettled(s3Keys.map((key) => deleteFromS3(key)));
 };
 
 const searchProducts = async ({ q, page = 1, limit = 20 }) => {

@@ -1,0 +1,264 @@
+{
+  "info": {
+    "name": "Acocie Stores – Orders (Admin)",
+    "_postman_id": "acocie-admin-orders-collection-v1",
+    "description": "Admin order management endpoints for the Acocie Stores API.\nBase URL variable: {{baseUrl}}  (default: http://localhost:5000/api/v1)\nAll endpoints require authentication ({{accessToken}}) with role: admin | super_admin.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:5000/api/v1", "type": "string" },
+    { "key": "accessToken", "value": "", "type": "string" },
+    { "key": "orderId", "value": "", "type": "string" },
+    { "key": "cancellationId", "value": "", "type": "string" },
+    { "key": "returnId", "value": "", "type": "string" }
+  ],
+  "item": [
+    {
+      "name": "Dashboard",
+      "item": [
+        {
+          "name": "Get Admin Dashboard Stats",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/admin-orders/dashboard/orders",
+              "host": ["{{baseUrl}}"],
+              "path": ["admin-orders", "dashboard", "orders"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Orders",
+      "item": [
+        {
+          "name": "Get All Orders",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/admin-orders/orders?page=1&limit=20",
+              "host": ["{{baseUrl}}"],
+              "path": ["admin-orders", "orders"],
+              "query": [
+                { "key": "page", "value": "1" },
+                { "key": "limit", "value": "20" },
+                { "key": "status", "value": "pending", "description": "pending | confirmed | processing | shipped | delivered | cancelled | refunded", "disabled": true },
+                { "key": "paymentStatus", "value": "paid", "description": "pending | paid | failed | refunded", "disabled": true },
+                { "key": "userId", "value": "", "description": "Filter by customer UUID", "disabled": true },
+                { "key": "vendorId", "value": "", "description": "Filter by vendor UUID", "disabled": true },
+                { "key": "startDate", "value": "2025-01-01", "description": "ISO date", "disabled": true },
+                { "key": "endDate", "value": "2025-12-31", "description": "ISO date", "disabled": true },
+                { "key": "minAmount", "value": "", "description": "Minimum order amount", "disabled": true },
+                { "key": "maxAmount", "value": "", "description": "Maximum order amount", "disabled": true },
+                { "key": "search", "value": "", "description": "Search by order number or customer name", "disabled": true }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Order by ID",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/admin-orders/orders/{{orderId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["admin-orders", "orders", "{{orderId}}"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Order Status History",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/admin-orders/orders/{{orderId}}/history",
+              "host": ["{{baseUrl}}"],
+              "path": ["admin-orders", "orders", "{{orderId}}", "history"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Confirm Order",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/admin-orders/orders/{{orderId}}/confirm",
+              "host": ["{{baseUrl}}"],
+              "path": ["admin-orders", "orders", "{{orderId}}", "confirm"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"paymentReference\": \"PAY-REF-987654\"\n}"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update Order Status",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/admin-orders/orders/{{orderId}}/status",
+              "host": ["{{baseUrl}}"],
+              "path": ["admin-orders", "orders", "{{orderId}}", "status"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"processing\",\n  \"reason\": \"Payment verified and order is being prepared.\"\n}"
+            },
+            "description": "status options: pending | confirmed | processing | shipped | delivered | cancelled | refunded"
+          },
+          "response": []
+        },
+        {
+          "name": "Add Admin Note to Order",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/admin-orders/orders/{{orderId}}/notes",
+              "host": ["{{baseUrl}}"],
+              "path": ["admin-orders", "orders", "{{orderId}}", "notes"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"content\": \"Customer called to confirm delivery address change.\",\n  \"isVisibleToCustomer\": false\n}"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Process Refund",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/admin-orders/orders/{{orderId}}/refund",
+              "host": ["{{baseUrl}}"],
+              "path": ["admin-orders", "orders", "{{orderId}}", "refund"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"refundAmount\": 49.99,\n  \"refundMethod\": \"original_payment\",\n  \"notes\": \"Partial refund issued for damaged item.\"\n}"
+            },
+            "description": "refundMethod options: original_payment | bank_transfer | store_credit"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Cancellations",
+      "item": [
+        {
+          "name": "Get Cancellation Requests",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/admin-orders/orders/cancellations",
+              "host": ["{{baseUrl}}"],
+              "path": ["admin-orders", "orders", "cancellations"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Process Cancellation Request",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/admin-orders/orders/cancellations/{{cancellationId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["admin-orders", "orders", "cancellations", "{{cancellationId}}"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"action\": \"approve\",\n  \"adminNotes\": \"Cancellation approved. Refund will be processed within 3-5 business days.\"\n}"
+            },
+            "description": "action options: approve | reject"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Returns",
+      "item": [
+        {
+          "name": "Get Return Requests",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/admin-orders/orders/returns",
+              "host": ["{{baseUrl}}"],
+              "path": ["admin-orders", "orders", "returns"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Process Return Request",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/admin-orders/orders/returns/{{returnId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["admin-orders", "orders", "returns", "{{returnId}}"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"action\": \"approve\",\n  \"adminNotes\": \"Return approved. Please ship items back with the provided label.\",\n  \"refundAmount\": 49.99\n}"
+            },
+            "description": "action options: approve | reject"
+          },
+          "response": []
+        }
+      ]
+    }
+  ]
+}

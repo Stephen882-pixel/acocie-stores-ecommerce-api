@@ -1,0 +1,163 @@
+{
+  "info": {
+    "name": "Acocie Stores – Orders (Vendor)",
+    "_postman_id": "acocie-vendor-orders-collection-v1",
+    "description": "Vendor-facing order management endpoints for the Acocie Stores API.\nBase URL variable: {{baseUrl}}  (default: http://localhost:5000/api/v1)\nAll endpoints require authentication ({{accessToken}}) with role: vendor | admin | super_admin.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:5000/api/v1", "type": "string" },
+    { "key": "accessToken", "value": "", "type": "string" },
+    { "key": "orderId", "value": "", "type": "string" }
+  ],
+  "item": [
+    {
+      "name": "Vendor Orders",
+      "item": [
+        {
+          "name": "Get Vendor Dashboard Stats",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/vendor/dashboard/stats",
+              "host": ["{{baseUrl}}"],
+              "path": ["vendor", "dashboard", "stats"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Vendor Orders",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/vendor/orders?page=1&limit=20",
+              "host": ["{{baseUrl}}"],
+              "path": ["vendor", "orders"],
+              "query": [
+                { "key": "page", "value": "1" },
+                { "key": "limit", "value": "20" },
+                { "key": "status", "value": "pending", "description": "pending | confirmed | processing | shipped | delivered | cancelled", "disabled": true },
+                { "key": "startDate", "value": "2025-01-01", "description": "ISO date", "disabled": true },
+                { "key": "endDate", "value": "2025-12-31", "description": "ISO date", "disabled": true }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Vendor Order by ID",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/vendor/orders/{{orderId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["vendor", "orders", "{{orderId}}"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Accept Order",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/vendor/orders/{{orderId}}/accept",
+              "host": ["{{baseUrl}}"],
+              "path": ["vendor", "orders", "{{orderId}}", "accept"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Ship Order",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/vendor/orders/{{orderId}}/ship",
+              "host": ["{{baseUrl}}"],
+              "path": ["vendor", "orders", "{{orderId}}", "ship"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"carrier\": \"DHL\",\n  \"trackingNumber\": \"DHL123456789\",\n  \"trackingUrl\": \"https://www.dhl.com/track?id=DHL123456789\",\n  \"estimatedDelivery\": \"2025-06-20\"\n}"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Mark as Delivered",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/vendor/orders/{{orderId}}/deliver",
+              "host": ["{{baseUrl}}"],
+              "path": ["vendor", "orders", "{{orderId}}", "deliver"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update Tracking Info",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/vendor/orders/{{orderId}}/tracking",
+              "host": ["{{baseUrl}}"],
+              "path": ["vendor", "orders", "{{orderId}}", "tracking"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"currentLocation\": \"Nairobi Sorting Facility\",\n  \"trackingStatus\": \"in_transit\",\n  \"estimatedDelivery\": \"2025-06-20\"\n}"
+            },
+            "description": "trackingStatus options: pending | in_transit | out_for_delivery | delivered | failed"
+          },
+          "response": []
+        },
+        {
+          "name": "Add Vendor Note to Order",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/vendor/orders/{{orderId}}/notes",
+              "host": ["{{baseUrl}}"],
+              "path": ["vendor", "orders", "{{orderId}}", "notes"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"content\": \"Item dispatched from warehouse. Customer will receive SMS confirmation.\",\n  \"isVisibleToCustomer\": true\n}"
+            }
+          },
+          "response": []
+        }
+      ]
+    }
+  ]
+}

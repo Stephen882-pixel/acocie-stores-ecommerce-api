@@ -1,0 +1,176 @@
+{
+  "info": {
+    "name": "Acocie Stores – Products",
+    "_postman_id": "acocie-products-collection-v1",
+    "description": "Product endpoints for the Acocie Stores API.\nBase URL variable: {{baseUrl}}  (default: http://localhost:5000/api/v1)\nAdmin/Vendor actions require {{accessToken}} to be set.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:5000/api/v1", "type": "string" },
+    { "key": "accessToken", "value": "", "type": "string" },
+    { "key": "productId", "value": "", "type": "string" }
+  ],
+  "item": [
+    {
+      "name": "Products",
+      "item": [
+        {
+          "name": "Get All Products",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/products?page=1&limit=20",
+              "host": ["{{baseUrl}}"],
+              "path": ["products"],
+              "query": [
+                { "key": "page", "value": "1", "description": "Page number" },
+                { "key": "limit", "value": "20", "description": "Items per page (max 100)" },
+                { "key": "category", "value": "", "description": "Filter by category UUID", "disabled": true },
+                { "key": "minPrice", "value": "", "description": "Minimum price", "disabled": true },
+                { "key": "maxPrice", "value": "", "description": "Maximum price", "disabled": true },
+                { "key": "status", "value": "active", "description": "active | draft | archived", "disabled": true },
+                { "key": "featured", "value": "true", "description": "true | false", "disabled": true },
+                { "key": "vendor", "value": "", "description": "Filter by vendor UUID", "disabled": true },
+                { "key": "sortBy", "value": "created_at", "description": "created_at | price | name | viewCount | soldCount", "disabled": true },
+                { "key": "order", "value": "DESC", "description": "ASC | DESC", "disabled": true }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Search Products",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/products/search?q=shirt&page=1&limit=20",
+              "host": ["{{baseUrl}}"],
+              "path": ["products", "search"],
+              "query": [
+                { "key": "q", "value": "shirt", "description": "Search query (required)" },
+                { "key": "page", "value": "1" },
+                { "key": "limit", "value": "20" }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Featured Products",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/products/featured",
+              "host": ["{{baseUrl}}"],
+              "path": ["products", "featured"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Product by ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/products/{{productId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["products", "{{productId}}"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Create Product (Vendor / Admin)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const res = pm.response.json();",
+                  "if (res.product && res.product.id) pm.collectionVariables.set('productId', res.product.id);"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/products",
+              "host": ["{{baseUrl}}"],
+              "path": ["products"]
+            },
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                { "key": "categoryId",       "value": "<category-uuid>",            "type": "text", "description": "UUID of the category (required)" },
+                { "key": "name",             "value": "Classic White T-Shirt",      "type": "text" },
+                { "key": "sku",              "value": "TS-WHITE-001",               "type": "text" },
+                { "key": "price",            "value": "19.99",                      "type": "text" },
+                { "key": "description",      "value": "A comfortable everyday white t-shirt.", "type": "text" },
+                { "key": "shortDescription", "value": "Classic white tee",          "type": "text" },
+                { "key": "stockQuantity",    "value": "100",                        "type": "text" },
+                { "key": "lowStockThreshold","value": "10",                         "type": "text" },
+                { "key": "status",           "value": "active",                     "type": "text", "description": "draft | active | archived" },
+                { "key": "isFeatured",       "value": "false",                      "type": "text" },
+                { "key": "tags",             "value": "[\"t-shirt\",\"cotton\",\"white\"]", "type": "text", "description": "JSON array string" },
+                { "key": "dimensions",       "value": "{\"length\":30,\"width\":20,\"height\":2}", "type": "text", "description": "JSON object string (optional)" },
+                { "key": "variants",         "value": "[{\"sku\":\"TS-WHITE-001-S\",\"name\":\"Small\",\"price\":19.99,\"stockQuantity\":30,\"options\":{\"size\":\"S\"}},{\"sku\":\"TS-WHITE-001-M\",\"name\":\"Medium\",\"price\":19.99,\"stockQuantity\":50,\"options\":{\"size\":\"M\"}}]", "type": "text", "description": "JSON array string of variant objects" },
+                { "key": "images",           "type": "file", "src": [], "description": "Upload 1–10 product images (JPEG, PNG, WebP, GIF – max 10 MB each)" }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update Product (Vendor / Admin)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/products/{{productId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["products", "{{productId}}"]
+            },
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                { "key": "name",          "value": "Classic White T-Shirt (Updated)", "type": "text" },
+                { "key": "price",         "value": "24.99",                           "type": "text" },
+                { "key": "status",        "value": "active",                          "type": "text" },
+                { "key": "isFeatured",    "value": "true",                            "type": "text" },
+                { "key": "images",        "type": "file", "src": [],                  "description": "Add new images – they will be APPENDED to existing ones" }
+              ]
+            },
+            "description": "Send only the fields you want to update. New images are appended to the existing gallery."
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Product (Vendor / Admin)",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/products/{{productId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["products", "{{productId}}"]
+            }
+          },
+          "response": []
+        }
+      ]
+    }
+  ]
+}

@@ -35,7 +35,7 @@ app.use('/api-docs', (req, res, next) => {
 
 
 app.use(cors({
-    origin: process.env.FRONTEND_URL || 'http://localhost:3001',
+    origin: process.env.FRONTEND_URL || 'http://localhost:5173',
     credentials:true
 }));
 
@@ -155,9 +155,7 @@ app.use((req, res) => {
 
 app.use((err, req, res, next) => {
     console.error(`${RED}${BOLD}[ERROR]${RESET} ${err.message}`);
-    if (err.stack && process.env.NODE_ENV === 'development') {
-        console.error(`${DIM}${err.stack}${RESET}`);
-    }
+    console.error(err.stack); // always log stack so we can see the origin
     res.status(err.status || 500).json({
         error: err.message || 'Internal Server error',
         ...(process.env.NODE_ENV === 'development' && {stack:err.stack})
