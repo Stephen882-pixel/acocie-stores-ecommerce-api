@@ -163,7 +163,7 @@ app.use((err, req, res, next) => {
 });
 
 
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 5002;
 
 const startServer = async () => {
     try{
