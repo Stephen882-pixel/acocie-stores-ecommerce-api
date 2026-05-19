@@ -59,11 +59,41 @@ const getDashboardStats = async (req, res) => {
     }
 };
 
+const getVendorRequests = async (req, res) => {
+    try {
+        const result = await adminService.getVendorRequests(req.query);
+        return res.json(result);
+    } catch (error) {
+        return handleError(res, error);
+    }
+};
+
+const approveVendor = async (req, res) => {
+    try {
+        const result = await adminService.approveVendor(req.params.id, req.user);
+        return res.json(result);
+    } catch (error) {
+        return handleError(res, error);
+    }
+};
+
+const rejectVendor = async (req, res) => {
+    try {
+        const result = await adminService.rejectVendor(req.params.id, req.user);
+        return res.json(result);
+    } catch (error) {
+        return handleError(res, error);
+    }
+};
+
 module.exports = {
     getAllUsers,
     getUserById,
     updateUserStatus,
     updateUserRole,
     deleteUser,
-    getDashboardStats
+    getDashboardStats,
+    getVendorRequests,
+    approveVendor,
+    rejectVendor
 };

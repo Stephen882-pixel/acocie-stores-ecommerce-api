@@ -53,11 +53,7 @@ const signup = Joi.object({
         .optional()
         .allow('')
         .messages({ 'string.pattern.base': 'Phone number is not valid' })
-        .label('Phone'),
-    role: Joi.string()
-        .valid('customer', 'vendor')
-        .default('customer')
-        .label('Role')
+        .label('Phone')
 });
 
 

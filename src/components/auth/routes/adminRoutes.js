@@ -20,5 +20,10 @@ router.delete('/users/:id', adminController.deleteUser);
 // DASHBOARD
 router.get('/dashboard/stats', adminController.getDashboardStats);
 
+// VENDOR APPROVAL
+router.get('/vendor-requests',            validate(adminSchema.getVendorRequestsQuery, 'query'), adminController.getVendorRequests);
+router.put('/vendor-requests/:id/approve', adminController.approveVendor);
+router.put('/vendor-requests/:id/reject',  adminController.rejectVendor);
+
 module.exports = router;
 

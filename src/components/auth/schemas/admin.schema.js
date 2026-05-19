@@ -13,8 +13,8 @@ const Joi = require('joi');
 const getUsersQuery = Joi.object({
     page:   Joi.number().integer().min(1).default(1).label('Page'),
     limit:  Joi.number().integer().min(1).max(100).default(20).label('Limit'),
-    role:   Joi.string().valid('customer', 'vendor', 'admin', 'super_admin').optional().label('Role'),
-    status: Joi.string().valid('active', 'inactive', 'suspended').optional().label('Status'),
+    role:   Joi.string().valid('customer', 'vendor_pending', 'vendor', 'admin', 'super_admin').optional().label('Role'),
+    status: Joi.string().valid('active', 'inactive', 'suspended', 'banned').optional().label('Status'),
     search: Joi.string().trim().max(100).optional().allow('').label('Search')
 });
 
@@ -40,6 +40,14 @@ const updateUserRole = Joi.object({
         .label('Role')
 });
 
+/**
+ * GET /admin/vendor-requests  (query params)
+ */
+const getVendorRequestsQuery = Joi.object({
+    page:  Joi.number().integer().min(1).default(1).label('Page'),
+    limit: Joi.number().integer().min(1).max(100).default(20).label('Limit')
+});
+
 // ─── Exports ──────────────────────────────────────────────────────────────────
 
-module.exports = { getUsersQuery, updateUserStatus, updateUserRole };
+module.exports = { getUsersQuery, updateUserStatus, updateUserRole, getVendorRequestsQuery };

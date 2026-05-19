@@ -22,4 +22,7 @@ router.delete('/addresses/:id', userController.deleteAddress);
 // LOGIN HISTORY
 router.get('/login-history', userController.getLoginHistory);
 
+// VENDOR REQUEST
+router.post('/request-vendor', userController.requestVendorStatus);
+
 module.exports = router;

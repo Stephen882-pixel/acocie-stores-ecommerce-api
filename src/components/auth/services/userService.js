@@ -141,6 +141,36 @@ const deleteAccount = async (userId, password) => {
     return { message: 'Account deleted successfully' };
 };
 
+const requestVendorStatus = async (userId) => {
+    const user = await User.findByPk(userId);
+    if (!user) {
+        throw createError('User not found', 404);
+    }
+
+    if (!user.isVerified) {
+        throw createError('You must verify your email before requesting vendor status', 403);
+    }
+
+    if (user.role === 'vendor_pending') {
+        throw createError('You already have a pending vendor request', 409);
+    }
+
+    if (user.role === 'vendor') {
+        throw createError('You are already a vendor', 409);
+    }
+
+    if (user.role !== 'customer') {
+        throw createError('Only customers can request vendor status', 403);
+    }
+
+    await user.update({ role: 'vendor_pending' });
+
+    return {
+        message: 'Vendor request submitted successfully. An admin will review your application.',
+        role: user.role
+    };
+};
+
 module.exports = {
     getProfile,
     updateProfile,
@@ -149,5 +179,6 @@ module.exports = {
     updateAddress,
     deleteAddress,
     getLoginHistory,
-    deleteAccount
+    deleteAccount,
+    requestVendorStatus
 };
