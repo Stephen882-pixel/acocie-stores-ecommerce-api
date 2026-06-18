@@ -21,7 +21,7 @@ COPY --from=builder /app .
 
 RUN chmod +x entrypoint.sh
 
-RUN addgroup -S appgroup && adduser -S appuser -G appgroup
+RUN addgroup -S appgroup && adduser -S appuser -G appgroup    
 USER appuser
 
 EXPOSE 5000
