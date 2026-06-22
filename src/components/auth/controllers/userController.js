@@ -77,6 +77,15 @@ const deleteAccount = async (req, res) => {
     }
 };
 
+const requestVendorStatus = async (req, res) => {
+    try {
+        const result = await userService.requestVendorStatus(req.user.userId);
+        return res.json(result);
+    } catch (error) {
+        return handleError(res, error);
+    }
+};
+
 module.exports = {
     getProfile,
     updateProfile,
@@ -85,5 +94,6 @@ module.exports = {
     updateAddress,
     deleteAddress,
     getLoginHistory,
-    deleteAccount
+    deleteAccount,
+    requestVendorStatus
 };

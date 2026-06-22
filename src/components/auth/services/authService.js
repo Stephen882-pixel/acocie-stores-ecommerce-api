@@ -10,7 +10,7 @@ const createError = (message, statusCode) => {
     return error;
 };
 
-const signup = async ({ firstName, lastName, email, password, phone, role }) => {
+const signup = async ({ firstName, lastName, email, password, phone }) => {
     if (!firstName || !lastName || !email || !password) {
         throw createError('All fields are required', 400);
     }
@@ -29,7 +29,7 @@ const signup = async ({ firstName, lastName, email, password, phone, role }) => 
     }
 
     const passwordHash = await authUtils.hashPassword(password);
-    const userRole = role === 'vendor' ? 'vendor' : 'customer';
+    const userRole = 'customer'; 
 
     const user = await User.create({ firstName, lastName, email, phone, passwordHash, role: userRole });
 

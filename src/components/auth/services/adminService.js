@@ -158,11 +158,72 @@ const getDashboardStats = async () => {
     };
 };
 
+const getVendorRequests = async ({ page = 1, limit = 20 }) => {
+    const offset = (page - 1) * limit;
+
+    const { count, rows: users } = await User.findAndCountAll({
+        where: { role: 'vendor_pending' },
+        attributes: { exclude: ['passwordHash'] },
+        limit: parseInt(limit),
+        offset: parseInt(offset),
+        order: [['created_at', 'ASC']]
+    });
+
+    return {
+        users,
+        pagination: {
+            total: count,
+            page: parseInt(page),
+            limit: parseInt(limit),
+            pages: Math.ceil(count / limit)
+        }
+    };
+};
+
+const approveVendor = async (id, requestingUser) => {
+    const user = await User.findByPk(id);
+    if (!user) {
+        throw createError('User not found', 404);
+    }
+
+    if (user.role !== 'vendor_pending') {
+        throw createError('User does not have a pending vendor request', 400);
+    }
+
+    await user.update({ role: 'vendor' });
+
+    return {
+        message: 'Vendor request approved. User is now a vendor.',
+        user: { id: user.id, email: user.email, role: user.role }
+    };
+};
+
+const rejectVendor = async (id, requestingUser) => {
+    const user = await User.findByPk(id);
+    if (!user) {
+        throw createError('User not found', 404);
+    }
+
+    if (user.role !== 'vendor_pending') {
+        throw createError('User does not have a pending vendor request', 400);
+    }
+
+    await user.update({ role: 'customer' });
+
+    return {
+        message: 'Vendor request rejected. User has been set to customer.',
+        user: { id: user.id, email: user.email, role: user.role }
+    };
+};
+
 module.exports = {
     getAllUsers,
     getUserById,
     updateUserStatus,
     updateUserRole,
     deleteUser,
-    getDashboardStats
+    getDashboardStats,
+    getVendorRequests,
+    approveVendor,
+    rejectVendor
 };

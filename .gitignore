@@ -40,3 +40,7 @@ Thumbs.db
 # Build
 dist/
 build/
+.env
+
+# Docs (local learning notes, not for version control)
+docs/

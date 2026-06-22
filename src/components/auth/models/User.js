@@ -46,7 +46,7 @@ module.exports = (sequelize) => {
       field: 'password_hash'
     },
     role: {
-      type: DataTypes.ENUM('customer', 'vendor', 'admin', 'super_admin'),
+      type: DataTypes.ENUM('customer', 'vendor_pending', 'vendor', 'admin', 'super_admin'),
       defaultValue: 'customer',
       allowNull: false
     },
