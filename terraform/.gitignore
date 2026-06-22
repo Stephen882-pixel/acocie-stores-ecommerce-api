@@ -1,0 +1,7 @@
+# Local Terraform state — never commit these; they contain resource IDs and secrets
+.terraform/
+.terraform.lock.hcl
+terraform.tfstate
+terraform.tfstate.backup
+*.tfvars
+*.auto.tfvars
