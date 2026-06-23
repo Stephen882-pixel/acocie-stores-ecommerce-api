@@ -26,3 +26,11 @@ coverage/
 
 # Nodemon config (dev only)
 nodemon.json
+
+# Terraform — provider binaries are ~500 MB each, no place in the app image
+terraform/
+
+# Dev / reference files — not needed at runtime
+docs/
+postman/
+*.md
