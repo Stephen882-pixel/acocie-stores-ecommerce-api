@@ -9,18 +9,13 @@ variable "project" {
   default     = "acocie-stores"
 }
 
-variable "vpc_id" {
-  description = "ID of the VPC where RDS will be placed"
-  type        = string
-}
-
 variable "private_subnet_ids" {
   description = "IDs of the private subnets for the RDS subnet group"
   type        = list(string)
 }
 
-variable "ecs_security_group_id" {
-  description = "Security group ID of the ECS tasks — only they may connect to RDS"
+variable "rds_security_group_id" {
+  description = "Security group ID for RDS (created by the VPC module)"
   type        = string
 }
 
@@ -34,11 +29,6 @@ variable "db_username" {
   description = "Master username for RDS"
   type        = string
   default     = "postgres"
-}
-
-variable "db_password_secret_arn" {
-  description = "ARN of the Secrets Manager secret holding the DB password"
-  type        = string
 }
 
 variable "instance_class" {

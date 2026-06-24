@@ -28,16 +28,14 @@ module "vpc" {
 }
 
 # ── Phase 4 — RDS ─────────────────────────────────────────────────────────────
-# module "rds" {
-#   source                  = "../../modules/rds"
-#   environment             = var.environment
-#   project                 = var.project
-#   vpc_id                  = module.vpc.vpc_id
-#   private_subnet_ids      = module.vpc.private_subnet_ids
-#   ecs_security_group_id   = module.ecs.ecs_security_group_id
-#   db_password_secret_arn  = var.db_password_secret_arn
-#   instance_class          = "db.t3.micro"
-# }
+module "rds" {
+  source                = "../../modules/rds"
+  environment           = var.environment
+  project               = var.project
+  private_subnet_ids    = module.vpc.private_subnet_ids
+  rds_security_group_id = module.vpc.rds_security_group_id
+  instance_class        = "db.t3.micro"
+}
 
 # ── Phase 5 — ALB ─────────────────────────────────────────────────────────────
 # module "alb" {

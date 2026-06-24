@@ -37,6 +37,17 @@ output "private_subnet_ids" {
   value       = module.vpc.private_subnet_ids
 }
 
+# ── Phase 4 outputs (RDS) ─────────────────────────────────────────────────────
+output "db_endpoint" {
+  description = "RDS endpoint — used to build DATABASE_URL"
+  value       = module.rds.db_endpoint
+}
+
+output "db_secret_arn" {
+  description = "Secrets Manager ARN for the DB password"
+  value       = module.rds.db_secret_arn
+}
+
 # ── Phase 5 outputs (ALB) — uncomment after module is wired up ────────────────
 # output "api_url" {
 #   description = "Public DNS name of the load balancer — your API is reachable here"
