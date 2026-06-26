@@ -21,7 +21,13 @@ const sequelize = new Sequelize({
     underscored: true,
     createdAt: 'created_at',
     updatedAt: 'updated_at'
-  }
+  },
+  // RDS requires SSL — only enabled in production to keep local dev simple
+  ...(process.env.NODE_ENV === 'production' && {
+    dialectOptions: {
+      ssl: { require: true, rejectUnauthorized: false }
+    }
+  })
 });
 
 const testConnection = async () =>{

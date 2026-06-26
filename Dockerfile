@@ -24,6 +24,6 @@ RUN chmod +x entrypoint.sh
 RUN addgroup -S appgroup && adduser -S appuser -G appgroup    
 USER appuser
 
-EXPOSE 5000
+EXPOSE 5002
 
 ENTRYPOINT ["./entrypoint.sh"]

@@ -20,10 +20,6 @@ npx sequelize-cli db:migrate
 
 echo "✔  Migrations complete."
 
-echo "⏳  Running seeders..."
-npx sequelize-cli db:seed:all
-
-echo "✔  Seeders complete."
 echo "  Starting API server..."
 
 exec node server.js

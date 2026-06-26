@@ -44,3 +44,30 @@ build/
 
 # Docs (local learning notes, not for version control)
 docs/
+
+# ── Terraform ─────────────────────────────────────────────────────────────────
+# Downloaded provider plugins and module caches — never commit these.
+.terraform/
+
+# State files — all environments use remote state (S3), so local .tfstate files
+# should not exist during normal use. The one exception is envs/backend/ which
+# uses local state by design; back that file up manually or store it securely.
+*.tfstate
+*.tfstate.backup
+
+# Plan output files — contain the serialised diff; generated on demand, not stored.
+*.tfplan
+
+# Crash log from a failed apply.
+crash.log
+crash.*.log
+
+# Override files — used for local dev tweaks, should not be shared.
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+
+# NOTE: terraform.tfvars files are intentionally NOT ignored.
+# They only contain non-sensitive config (region, env name, instance sizes).
+# Real secrets live in AWS Secrets Manager, not in tfvars.

@@ -17,8 +17,13 @@ const shared = {
   }
 };
 
+// RDS requires SSL in production
+const ssl = process.env.NODE_ENV === 'production'
+  ? { dialectOptions: { ssl: { require: true, rejectUnauthorized: false } } }
+  : {};
+
 module.exports = {
   development: { ...shared },
   test:        { ...shared, database: process.env.DB_NAME_TEST || 'acocie_stores_test' },
-  production:  { ...shared }
+  production:  { ...shared, ...ssl }
 };
