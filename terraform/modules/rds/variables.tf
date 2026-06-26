@@ -9,8 +9,8 @@ variable "project" {
   default     = "acocie-stores"
 }
 
-variable "private_subnet_ids" {
-  description = "IDs of the private subnets for the RDS subnet group"
+variable "subnet_ids" {
+  description = "Subnet IDs for the RDS subnet group. Use public subnets when publicly_accessible=true (dev), private subnets otherwise."
   type        = list(string)
 }
 
@@ -41,4 +41,10 @@ variable "allocated_storage" {
   description = "Storage in GB"
   type        = number
   default     = 20
+}
+
+variable "publicly_accessible" {
+  description = "Give the instance a public endpoint — enable in dev for pgAdmin access, keep false in prod"
+  type        = bool
+  default     = false
 }

@@ -193,6 +193,17 @@ resource "aws_security_group" "rds" {
     security_groups = [aws_security_group.ecs.id]
   }
 
+  dynamic "ingress" {
+    for_each = var.admin_cidr != null ? [var.admin_cidr] : []
+    content {
+      from_port   = 5432
+      to_port     = 5432
+      protocol    = "tcp"
+      cidr_blocks = [ingress.value]
+      description = "Admin DB access from ${ingress.value}"
+    }
+  }
+
   egress {
     from_port   = 0
     to_port     = 0

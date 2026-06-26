@@ -48,8 +48,19 @@ output "db_secret_arn" {
   value       = module.rds.db_secret_arn
 }
 
-# ── Phase 5 outputs (ALB) — uncomment after module is wired up ────────────────
-# output "api_url" {
-#   description = "Public DNS name of the load balancer — your API is reachable here"
-#   value       = "http://${module.alb.alb_dns_name}"
-# }
+# ── Phase 5 outputs (ALB) ─────────────────────────────────────────────────────
+output "api_url" {
+  description = "Public URL of the API via the load balancer"
+  value       = "http://${module.alb.alb_dns_name}"
+}
+
+# ── Phase 6 outputs (ECS) ─────────────────────────────────────────────────────
+output "ecs_cluster_name" {
+  description = "ECS cluster name"
+  value       = module.ecs.cluster_name
+}
+
+output "app_secrets_arn" {
+  description = "Secrets Manager ARN — populate JWT + email secrets here before tasks can start"
+  value       = module.ecs.app_secrets_arn
+}

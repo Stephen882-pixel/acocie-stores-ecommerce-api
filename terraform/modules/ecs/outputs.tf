@@ -1,5 +1,14 @@
-# Outputs will be added in Phase 6.
-#
-# Planned outputs:
-#   cluster_name, cluster_arn, service_name, task_definition_arn,
-#   task_role_arn, execution_role_arn, ecs_security_group_id
+output "cluster_name" {
+  description = "ECS cluster name — use in AWS CLI commands"
+  value       = aws_ecs_cluster.main.name
+}
+
+output "service_name" {
+  description = "ECS service name — use in AWS CLI commands"
+  value       = aws_ecs_service.api.name
+}
+
+output "app_secrets_arn" {
+  description = "Secrets Manager ARN for JWT + email secrets — populate real values before tasks can start"
+  value       = aws_secretsmanager_secret.app.arn
+}

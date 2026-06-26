@@ -19,10 +19,15 @@ variable "public_subnet_ids" {
   type        = list(string)
 }
 
+variable "alb_security_group_id" {
+  description = "Security group ID for the ALB (created by the VPC module)"
+  type        = string
+}
+
 variable "container_port" {
   description = "Port the API container listens on (must match EXPOSE in Dockerfile)"
   type        = number
-  default     = 5000
+  default     = 5002
 }
 
 variable "health_check_path" {

@@ -37,3 +37,9 @@ variable "app_port" {
   type        = number
   default     = 5002
 }
+
+variable "admin_cidr" {
+  description = "Your IP in CIDR notation (e.g. 1.2.3.4/32) — allows pgAdmin access to RDS from your machine. Dev only."
+  type        = string
+  default     = null
+}

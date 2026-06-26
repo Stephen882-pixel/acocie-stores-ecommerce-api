@@ -1,6 +1,6 @@
 resource "aws_db_subnet_group" "main" {
   name       = "${var.project}-${var.environment}-db-subnet-group"
-  subnet_ids = var.private_subnet_ids
+  subnet_ids = var.subnet_ids
 
   tags = {
     Name        = "${var.project}-${var.environment}-db-subnet-group"
@@ -31,7 +31,7 @@ resource "aws_db_instance" "main" {
   vpc_security_group_ids = [var.rds_security_group_id]
 
   multi_az            = false # disabled for dev — enable in stage/prod
-  publicly_accessible = false
+  publicly_accessible = var.publicly_accessible
 
   backup_retention_period = 7
   backup_window           = "03:00-04:00"
