@@ -1,0 +1,11 @@
+process.env.NODE_ENV = 'test';
+process.env.JWT_SECRET = 'test-access-secret';
+process.env.JWT_REFRESH_SECRET = 'test-refresh-secret';
+process.env.JWT_ACCESS_EXPIRY = '15m';
+process.env.JWT_REFRESH_EXPIRY = '7d';
+process.env.OTP_EXPIRY_MINUTES = '10';
+process.env.EMAIL_HOST = 'localhost';
+process.env.EMAIL_PORT = '465';
+process.env.EMAIL_USER = 'test@example.com';
+process.env.EMAIL_PASSWORD = 'test-password';
+process.env.EMAIL_FROM = 'Acocie Stores <test@example.com>';
