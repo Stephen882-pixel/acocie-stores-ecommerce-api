@@ -1,4 +1,5 @@
 const { RbacAuditLog } = require('../../../models');
+const { paginate } = require('../../../helpers/response.helper');
 
 const record = ({ actorId, action, targetType, targetId, before, after }, transaction) =>
     RbacAuditLog.create({ actorId, action, targetType, targetId, before, after }, { transaction });
@@ -12,12 +13,7 @@ const listAuditLogs = async ({ page = 1, limit = 20 }) => {
 
     return {
         logs,
-        pagination: {
-            total: count,
-            page: parseInt(page),
-            limit: parseInt(limit),
-            pages: Math.ceil(count / limit)
-        }
+        pagination: paginate(count, page, limit)
     };
 };
 

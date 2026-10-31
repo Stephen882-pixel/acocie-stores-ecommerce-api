@@ -4,11 +4,7 @@ const emailService = require('./emailService');
 const { Op } = require('sequelize');
 const { sequelize } = require('../../../config/database');
 
-const createError = (message, statusCode) => {
-    const error = new Error(message);
-    error.statusCode = statusCode;
-    return error;
-};
+const { createError } = require('../../../helpers/error.helper');
 
 const signup = async ({ firstName, lastName, email, password, phone }) => {
     if (!firstName || !lastName || !email || !password) {
@@ -110,7 +106,7 @@ const login = async ({ email, password, ip, userAgent }) => {
     }
 
     if (!user.isVerified) {
-        throw Object.assign(createError('Please verify your email first', 403), { needsVerification: true });
+        throw createError('Please verify your email first', 403, { code: 'EMAIL_NOT_VERIFIED' });
     }
 
     const isPasswordValid = await authUtils.comparePassword(password, user.passwordHash);

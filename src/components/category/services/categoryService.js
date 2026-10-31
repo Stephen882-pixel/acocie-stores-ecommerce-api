@@ -2,11 +2,7 @@
 
 const { Category, Product } = require('../../../models');
 
-const createError = (message, statusCode) => {
-    const error = new Error(message);
-    error.statusCode = statusCode;
-    return error;
-};
+const { createError } = require('../../../helpers/error.helper');
 
 const generateSlug = (text) => {
     return text

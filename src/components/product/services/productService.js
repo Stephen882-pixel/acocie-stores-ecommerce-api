@@ -6,11 +6,8 @@ const { deleteFromS3 } = require('../../../helpers/s3.helper');
 const { can } = require('../../rbac/services/permissionService');
 const { PERMISSIONS: P } = require('../../rbac/constants/permissions');
 
-const createError = (message, statusCode) => {
-    const error = new Error(message);
-    error.statusCode = statusCode;
-    return error;
-};
+const { createError } = require('../../../helpers/error.helper');
+const { paginate } = require('../../../helpers/response.helper');
 
 const generateSlug = (text) => {
     return text
@@ -62,12 +59,7 @@ const getAllProducts = async ({
 
     return {
         products,
-        pagination: {
-            total: count,
-            page: parseInt(page),
-            limit: parseInt(limit),
-            pages: Math.ceil(count / limit)
-        }
+        pagination: paginate(count, page, limit)
     };
 };
 
@@ -331,12 +323,7 @@ const searchProducts = async ({ q, page = 1, limit = 20 }) => {
     return {
         query: q,
         products,
-        pagination: {
-            total: count,
-            page: parseInt(page),
-            limit: parseInt(limit),
-            pages: Math.ceil(count / limit)
-        }
+        pagination: paginate(count, page, limit)
     };
 };
 

@@ -63,7 +63,10 @@ describe('authenticate middleware', () => {
         await authenticate(reqWithAuth('Bearer not-a-real-token'), res, next);
 
         expect(res.status).toHaveBeenCalledWith(401);
-        expect(res.json).toHaveBeenCalledWith({ error: 'Invalid or expired token' });
+        expect(res.json).toHaveBeenCalledWith({
+            success: false,
+            error: { statusCode: 401, code: 'UNAUTHORIZED', message: 'Invalid or expired token' }
+        });
         expect(next).not.toHaveBeenCalled();
     });
 
@@ -83,7 +86,10 @@ describe('authenticate middleware', () => {
         await authenticate(reqWithAuth(`Bearer ${token}`), res, next);
 
         expect(res.status).toHaveBeenCalledWith(401);
-        expect(res.json).toHaveBeenCalledWith({ error: 'User not found' });
+        expect(res.json).toHaveBeenCalledWith({
+            success: false,
+            error: { statusCode: 401, code: 'UNAUTHORIZED', message: 'User not found' }
+        });
     });
 
     it.each(['suspended', 'banned'])('returns 403 when the user is %s', async (status) => {
@@ -104,6 +110,9 @@ describe('authenticate middleware', () => {
         await authenticate(reqWithAuth(`Bearer ${token}`), res, next);
 
         expect(res.status).toHaveBeenCalledWith(500);
-        expect(res.json).toHaveBeenCalledWith({ error: 'Authentication failed' });
+        expect(res.json).toHaveBeenCalledWith({
+            success: false,
+            error: { statusCode: 500, code: 'INTERNAL_ERROR', message: 'Authentication failed' }
+        });
     });
 });

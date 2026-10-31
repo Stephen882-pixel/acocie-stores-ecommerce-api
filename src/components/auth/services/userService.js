@@ -2,11 +2,7 @@ const { User, Address, LoginHistory } = require('../../../models');
 const authUtils = require('../utils/authUtils');
 const { Op } = require('sequelize');
 
-const createError = (message, statusCode) => {
-    const error = new Error(message);
-    error.statusCode = statusCode;
-    return error;
-};
+const { createError } = require('../../../helpers/error.helper');
 
 const getProfile = async (userId) => {
     const user = await User.findByPk(userId, {

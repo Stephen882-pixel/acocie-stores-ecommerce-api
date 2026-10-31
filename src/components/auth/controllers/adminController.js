@@ -1,89 +1,49 @@
 const adminService = require('../services/adminService');
-
-const handleError = (res, error) => {
-    console.error(`[AdminController] ${error.message}`);
-    return res.status(error.statusCode || 500).json({ error: error.message || 'Internal server error' });
-};
+const { sendSuccess } = require('../../../helpers/response.helper');
 
 const getAllUsers = async (req, res) => {
-    try {
-        const result = await adminService.getAllUsers(req.query);
-        return res.json(result);
-    } catch (error) {
-        return handleError(res, error);
-    }
+    const { users, pagination } = await adminService.getAllUsers(req.query);
+    return sendSuccess(res, users, { meta: { pagination } });
 };
 
 const getUserById = async (req, res) => {
-    try {
-        const result = await adminService.getUserById(req.params.id);
-        return res.json(result);
-    } catch (error) {
-        return handleError(res, error);
-    }
+    const { user } = await adminService.getUserById(req.params.id);
+    return sendSuccess(res, user);
 };
 
 const updateUserStatus = async (req, res) => {
-    try {
-        const result = await adminService.updateUserStatus(req.params.id, req.body.status, req.user);
-        return res.json(result);
-    } catch (error) {
-        return handleError(res, error);
-    }
+    const { message, user } = await adminService.updateUserStatus(req.params.id, req.body.status, req.user);
+    return sendSuccess(res, user, { message });
 };
 
 const updateUserRole = async (req, res) => {
-    try {
-        const result = await adminService.updateUserRole(req.params.id, req.body.role, req.user);
-        return res.json(result);
-    } catch (error) {
-        return handleError(res, error);
-    }
+    const { message, user } = await adminService.updateUserRole(req.params.id, req.body.role, req.user);
+    return sendSuccess(res, user, { message });
 };
 
 const deleteUser = async (req, res) => {
-    try {
-        const result = await adminService.deleteUser(req.params.id, req.user);
-        return res.json(result);
-    } catch (error) {
-        return handleError(res, error);
-    }
+    const { message } = await adminService.deleteUser(req.params.id, req.user);
+    return sendSuccess(res, null, { message });
 };
 
 const getDashboardStats = async (req, res) => {
-    try {
-        const result = await adminService.getDashboardStats();
-        return res.json(result);
-    } catch (error) {
-        return handleError(res, error);
-    }
+    const stats = await adminService.getDashboardStats();
+    return sendSuccess(res, stats);
 };
 
 const getVendorRequests = async (req, res) => {
-    try {
-        const result = await adminService.getVendorRequests(req.query);
-        return res.json(result);
-    } catch (error) {
-        return handleError(res, error);
-    }
+    const { users, pagination } = await adminService.getVendorRequests(req.query);
+    return sendSuccess(res, users, { meta: { pagination } });
 };
 
 const approveVendor = async (req, res) => {
-    try {
-        const result = await adminService.approveVendor(req.params.id, req.user);
-        return res.json(result);
-    } catch (error) {
-        return handleError(res, error);
-    }
+    const { message, user } = await adminService.approveVendor(req.params.id, req.user);
+    return sendSuccess(res, user, { message });
 };
 
 const rejectVendor = async (req, res) => {
-    try {
-        const result = await adminService.rejectVendor(req.params.id, req.user);
-        return res.json(result);
-    } catch (error) {
-        return handleError(res, error);
-    }
+    const { message, user } = await adminService.rejectVendor(req.params.id, req.user);
+    return sendSuccess(res, user, { message });
 };
 
 module.exports = {

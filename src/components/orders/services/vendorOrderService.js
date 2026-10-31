@@ -14,11 +14,8 @@ const {
 const { Op } = require('sequelize');
 const emailService = require('../../auth/services/emailService');
 
-const createError = (message, statusCode) => {
-    const error = new Error(message);
-    error.statusCode = statusCode;
-    return error;
-};
+const { createError } = require('../../../helpers/error.helper');
+const { paginate } = require('../../../helpers/response.helper');
 
 const recordStatusChange = async (orderId, oldStatus, newStatus, userId, reason = null, transaction = null) => {
     await OrderStatusHistory.create({
@@ -62,12 +59,7 @@ const getVendorOrders = async (vendorId, { page = 1, limit = 20, status, startDa
 
     return {
         orders,
-        pagination: {
-            total: count,
-            page: parseInt(page),
-            limit: parseInt(limit),
-            pages: Math.ceil(count / limit)
-        }
+        pagination: paginate(count, page, limit)
     };
 };
 
@@ -104,9 +96,9 @@ const acceptOrder = async (id, vendorId) => {
     if (!order) throw createError('Order not found', 404);
 
     if (order.status !== 'confirmed') {
-        const err = createError('Order must be in confirmed status to accept', 400);
-        err.currentStatus = order.status;
-        throw err;
+        throw createError('Order must be in confirmed status to accept', 400, {
+            code: 'INVALID_ORDER_STATUS', details: { currentStatus: order.status }
+        });
     }
 
     const oldStatus = order.status;
@@ -146,9 +138,9 @@ const shipOrder = async (id, vendorId, { carrier, trackingNumber, trackingUrl, e
 
         if (order.status !== 'processing') {
             await transaction.rollback();
-            const err = createError('Order must be in processing status to ship', 400);
-            err.currentStatus = order.status;
-            throw err;
+            throw createError('Order must be in processing status to ship', 400, {
+                code: 'INVALID_ORDER_STATUS', details: { currentStatus: order.status }
+            });
         }
 
         const oldStatus = order.status;
@@ -198,9 +190,9 @@ const markAsDelivered = async (id, vendorId) => {
     if (!order) throw createError('Order not found', 404);
 
     if (order.status !== 'shipped') {
-        const err = createError('Order must be in shipped status', 400);
-        err.currentStatus = order.status;
-        throw err;
+        throw createError('Order must be in shipped status', 400, {
+            code: 'INVALID_ORDER_STATUS', details: { currentStatus: order.status }
+        });
     }
 
     const oldStatus = order.status;

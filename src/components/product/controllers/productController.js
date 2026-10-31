@@ -2,14 +2,7 @@
 
 const productService = require('../services/productService');
 const { uploadManyToS3 } = require('../../../helpers/s3.helper');
-
-const handleError = (res, error) => {
-    console.error('[ProductController]', error.message);
-    console.error(error.stack);
-    return res.status(error.statusCode || 500).json({
-        error: error.message || 'Internal server error'
-    });
-};
+const { sendSuccess } = require('../../../helpers/response.helper');
 
 
 const parseJsonField = (raw, fallback = undefined) => {
@@ -43,113 +36,51 @@ const parseProductFields = (body = {}) => ({
     isFeatured:        body.isFeatured === 'true' || body.isFeatured === true,
 });
 
+// Uploads the gallery and per-variant images in req.files to S3.
+const uploadProductFiles = async (files = {}) => ({
+    uploadedImages:        files.images?.length        ? await uploadManyToS3(files.images, 'products') : [],
+    uploadedVariantImages: files.variantImages?.length ? await uploadManyToS3(files.variantImages, 'products/variants') : []
+});
 
 const getAllProducts = async (req, res) => {
-    try {
-        const result = await productService.getAllProducts(req.query, req.user?.role);
-        return res.json(result);
-    } catch (error) {
-        return handleError(res, error);
-    }
+    const { products, pagination } = await productService.getAllProducts(req.query, req.user?.role);
+    return sendSuccess(res, products, { meta: { pagination } });
 };
 
 const getProductById = async (req, res) => {
-    try {
-        const product = await productService.getProductById(req.params.id, req.user?.role);
-        return res.json({ product });
-    } catch (error) {
-        return handleError(res, error);
-    }
+    const product = await productService.getProductById(req.params.id, req.user?.role);
+    return sendSuccess(res, product);
 };
 
 const createProduct = async (req, res) => {
-    try {
+    const fields = parseProductFields(req.body || {});
+    const { uploadedImages, uploadedVariantImages } = await uploadProductFiles(req.files);
 
-        const fields = parseProductFields(req.body || {});
-
-        // Upload product gallery images to S3
-        const imageFiles = req.files?.images || [];
-        let uploadedImages = [];
-        if (imageFiles.length > 0) {
-            uploadedImages = await uploadManyToS3(imageFiles, 'products');
-        }
-
-        // Upload per-variant images to S3 (if provided)
-        const variantImageFiles = req.files?.variantImages || [];
-        let uploadedVariantImages = [];
-        if (variantImageFiles.length > 0) {
-            uploadedVariantImages = await uploadManyToS3(variantImageFiles, 'products/variants');
-        }
-
-        const product = await productService.createProduct(
-            fields,
-            uploadedImages,
-            uploadedVariantImages,
-            req.user
-        );
-
-        return res.status(201).json({ message: 'Product created successfully', product });
-    } catch (error) {
-        return handleError(res, error);
-    }
+    const product = await productService.createProduct(fields, uploadedImages, uploadedVariantImages, req.user);
+    return sendSuccess(res, product, { statusCode: 201, message: 'Product created successfully' });
 };
 
 const updateProduct = async (req, res) => {
-    try {
-        const fields = parseProductFields(req.body || {});
+    const fields = parseProductFields(req.body || {});
+    const { uploadedImages, uploadedVariantImages } = await uploadProductFiles(req.files);
 
-        // Upload any new product images to S3
-        const imageFiles = req.files?.images || [];
-        let uploadedImages = [];
-        if (imageFiles.length > 0) {
-            uploadedImages = await uploadManyToS3(imageFiles, 'products');
-        }
-
-        const variantImageFiles = req.files?.variantImages || [];
-        let uploadedVariantImages = [];
-        if (variantImageFiles.length > 0) {
-            uploadedVariantImages = await uploadManyToS3(variantImageFiles, 'products/variants');
-        }
-
-        const product = await productService.updateProduct(
-            req.params.id,
-            fields,
-            uploadedImages,
-            uploadedVariantImages,
-            req.user
-        );
-
-        return res.json({ message: 'Product updated successfully', product });
-    } catch (error) {
-        return handleError(res, error);
-    }
+    const product = await productService.updateProduct(req.params.id, fields, uploadedImages, uploadedVariantImages, req.user);
+    return sendSuccess(res, product, { message: 'Product updated successfully' });
 };
 
 const deleteProduct = async (req, res) => {
-    try {
-        await productService.deleteProduct(req.params.id, req.user);
-        return res.json({ message: 'Product deleted successfully' });
-    } catch (error) {
-        return handleError(res, error);
-    }
+    await productService.deleteProduct(req.params.id, req.user);
+    return sendSuccess(res, null, { message: 'Product deleted successfully' });
 };
 
 const searchProducts = async (req, res) => {
-    try {
-        const result = await productService.searchProducts(req.query);
-        return res.json(result);
-    } catch (error) {
-        return handleError(res, error);
-    }
+    const { query, products, pagination } = await productService.searchProducts(req.query);
+    return sendSuccess(res, products, { meta: { query, pagination } });
 };
 
 const getFeaturedProducts = async (req, res) => {
-    try {
-        const products = await productService.getFeaturedProducts(req.query.limit);
-        return res.json({ products });
-    } catch (error) {
-        return handleError(res, error);
-    }
+    const products = await productService.getFeaturedProducts(req.query.limit);
+    return sendSuccess(res, products);
 };
 
 module.exports = {

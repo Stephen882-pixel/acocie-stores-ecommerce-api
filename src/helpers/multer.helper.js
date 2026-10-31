@@ -3,6 +3,7 @@
 
 const multer = require('multer');
 const { ALLOWED_MIME_TYPES } = require('./s3.helper');
+const { sendError } = require('./response.helper');
 
 
 const MAX_FILE_SIZE_MB = 10;
@@ -64,9 +65,7 @@ const handleMulterError = (err, req, res, next) => {
             LIMIT_FILE_COUNT:     'Too many files uploaded.',
             LIMIT_UNEXPECTED_FILE: err.message || 'Unexpected file field.',
         };
-        return res.status(400).json({
-            error: messages[err.code] || `Upload error: ${err.message}`,
-        });
+        return sendError(res, 400, messages[err.code] || `Upload error: ${err.message}`, { code: 'UPLOAD_ERROR' });
     }
     next(err);
 };

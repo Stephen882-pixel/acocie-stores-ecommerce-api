@@ -14,11 +14,8 @@ const {
 const { Op } = require('sequelize');
 const emailService = require('../../auth/services/emailService');
 
-const createError = (message, statusCode) => {
-    const error = new Error(message);
-    error.statusCode = statusCode;
-    return error;
-};
+const { createError } = require('../../../helpers/error.helper');
+const { paginate } = require('../../../helpers/response.helper');
 
 const getOrderHistory = async (userId, { page = 1, limit = 20, status, startDate, endDate }) => {
     const offset = (page - 1) * limit;
@@ -47,12 +44,7 @@ const getOrderHistory = async (userId, { page = 1, limit = 20, status, startDate
 
     return {
         orders,
-        pagination: {
-            total: count,
-            page: parseInt(page),
-            limit: parseInt(limit),
-            pages: Math.ceil(count / limit)
-        }
+        pagination: paginate(count, page, limit)
     };
 };
 
@@ -119,9 +111,9 @@ const requestOrderCancellation = async (id, userId, reason) => {
     if (!order) throw createError('Order not found', 404);
 
     if (!['pending', 'confirmed'].includes(order.status)) {
-        const err = createError('Order cannot be cancelled at this stage', 400);
-        err.currentStatus = order.status;
-        throw err;
+        throw createError('Order cannot be cancelled at this stage', 400, {
+            code: 'INVALID_ORDER_STATUS', details: { currentStatus: order.status }
+        });
     }
 
     const existing = await OrderCancellation.findOne({

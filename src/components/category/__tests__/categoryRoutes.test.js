@@ -17,6 +17,7 @@ jest.mock('../../rbac/services/permissionService', () => {
 });
 
 const express = require('express');
+const { errorHandler } = require('../../../middleware/errorHandler');
 const request = require('supertest');
 const categoryService = require('../services/categoryService');
 const { User } = require('../../../models');
@@ -30,8 +31,12 @@ const buildApp = () => {
     const app = express();
     app.use(express.json());
     app.use('/api/v1/categories', categoryRoutes);
+    app.use(errorHandler);
     return app;
 };
+
+const errorBody = (statusCode, code, message, details) =>
+    ({ success: false, error: { statusCode, code, message, ...(details !== undefined && { details }) } });
 
 const serviceError = (message, statusCode) => Object.assign(new Error(message), { statusCode });
 
@@ -60,7 +65,7 @@ describe('Category routes', () => {
             const res = await request(app).get('/api/v1/categories?nested=true');
 
             expect(res.status).toBe(200);
-            expect(res.body).toEqual({ categories: [{ id: 'cat-1' }] });
+            expect(res.body).toEqual({ success: true, data: [{ id: 'cat-1' }] });
             expect(categoryService.getAllCategories).toHaveBeenCalledWith({
                 includeInactive: undefined, nested: 'true', userRole: undefined
             });
@@ -70,7 +75,7 @@ describe('Category routes', () => {
             const res = await request(app).get('/api/v1/categories?nested=yes');
 
             expect(res.status).toBe(400);
-            expect(res.body.error).toBe('Validation failed');
+            expect(res.body.error.code).toBe('VALIDATION_ERROR');
             expect(categoryService.getAllCategories).not.toHaveBeenCalled();
         });
 
@@ -92,7 +97,7 @@ describe('Category routes', () => {
             const res = await request(app).get('/api/v1/categories/cat-1?includeProducts=true');
 
             expect(res.status).toBe(200);
-            expect(res.body).toEqual({ category: { id: 'cat-1' } });
+            expect(res.body).toEqual({ success: true, data: { id: 'cat-1' } });
             expect(categoryService.getCategoryById).toHaveBeenCalledWith('cat-1', 'true');
         });
 
@@ -102,7 +107,7 @@ describe('Category routes', () => {
             const res = await request(app).get('/api/v1/categories/missing');
 
             expect(res.status).toBe(404);
-            expect(res.body).toEqual({ error: 'Category not found' });
+            expect(res.body).toEqual(errorBody(404, 'NOT_FOUND', 'Category not found'));
         });
 
         it('returns 500 for an unexpected error', async () => {
@@ -158,8 +163,9 @@ describe('Category routes', () => {
 
             expect(res.status).toBe(201);
             expect(res.body).toEqual({
+                success: true,
                 message: 'Category created successfully',
-                category: { id: 'cat-new', name: 'Lamps' }
+                data: { id: 'cat-new', name: 'Lamps' }
             });
             expect(categoryService.createCategory).toHaveBeenCalledWith({
                 name: 'Lamps', parentId: PARENT_ID, displayOrder: 0
@@ -185,7 +191,7 @@ describe('Category routes', () => {
                 .send({ name: 'Lamps', parentId: PARENT_ID });
 
             expect(res.status).toBe(404);
-            expect(res.body).toEqual({ error: 'Parent category not found' });
+            expect(res.body).toEqual(errorBody(404, 'NOT_FOUND', 'Parent category not found'));
         });
     });
 
@@ -212,7 +218,7 @@ describe('Category routes', () => {
                 .send({ parentId: PARENT_ID });
 
             expect(res.status).toBe(400);
-            expect(res.body).toEqual({ error: 'Category cannot be its own parent' });
+            expect(res.body).toEqual(errorBody(400, 'BAD_REQUEST', 'Category cannot be its own parent'));
         });
     });
 
@@ -225,7 +231,7 @@ describe('Category routes', () => {
                 .set('Authorization', `Bearer ${tokenFor('admin')}`);
 
             expect(res.status).toBe(200);
-            expect(res.body).toEqual({ message: 'Category deleted successfully' });
+            expect(res.body).toEqual({ success: true, message: 'Category deleted successfully', data: null });
             expect(categoryService.deleteCategory).toHaveBeenCalledWith('cat-1');
         });
 
