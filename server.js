@@ -21,6 +21,7 @@ const vendorOrderRoutes = require('./src/components/orders/routes/vendorOrderRou
 const adminOrderRoutes = require('./src/components/orders/routes/adminOrderRoutes');
 const rbacRoutes = require('./src/components/rbac/routes/rbacRoutes');
 const permissionService = require('./src/components/rbac/services/permissionService');
+const { notFound, errorHandler } = require('./src/middleware/errorHandler');
 
 const app = express();
 
@@ -150,21 +151,8 @@ app.use('/api/v1/vendor',vendorOrderRoutes);
 app.use('/api/v1/admin-orders',adminOrderRoutes);
 app.use('/api/v1/rbac',rbacRoutes);
 
-app.use((req, res) => {
-  res.status(404).json({ 
-    error: 'Route not found',
-    path: req.originalUrl
-  });
-});
-
-app.use((err, req, res, next) => {
-    console.error(`${RED}${BOLD}[ERROR]${RESET} ${err.message}`);
-    console.error(err.stack); // always log stack so we can see the origin
-    res.status(err.status || 500).json({
-        error: err.message || 'Internal Server error',
-        ...(process.env.NODE_ENV === 'development' && {stack:err.stack})
-    });
-});
+app.use(notFound);
+app.use(errorHandler);
 
 
 const PORT = process.env.PORT || 5002;

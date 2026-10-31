@@ -272,13 +272,13 @@ describe('authService', () => {
             expect(RefreshToken.create).not.toHaveBeenCalled();
         });
 
-        it('blocks unverified users with a needsVerification flag', async () => {
+        it('blocks unverified users with the EMAIL_NOT_VERIFIED code', async () => {
             User.findOne.mockResolvedValue(makeUser({ isVerified: false }));
 
             await expect(authService.login(credentials)).rejects.toMatchObject({
                 message: 'Please verify your email first',
                 statusCode: 403,
-                needsVerification: true
+                code: 'EMAIL_NOT_VERIFIED'
             });
             expect(RefreshToken.create).not.toHaveBeenCalled();
         });

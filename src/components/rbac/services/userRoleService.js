@@ -3,11 +3,7 @@ const { WILDCARD, PERMISSIONS } = require('../constants/permissions');
 const permissionService = require('./permissionService');
 const auditService = require('./auditService');
 
-const createError = (message, statusCode) => {
-    const error = new Error(message);
-    error.statusCode = statusCode;
-    return error;
-};
+const { createError } = require('../../../helpers/error.helper');
 
 // Permissions that give power over other users' access. An actor cannot
 // assign a role that holds one of these unless the actor holds it too.

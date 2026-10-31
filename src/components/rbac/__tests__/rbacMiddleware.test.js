@@ -65,7 +65,7 @@ describe('requirePermission', () => {
 
         expect(passed).toBe(false);
         expect(status).toBe(403);
-        expect(body).toEqual({ error: 'Access denied' });
+        expect(body).toEqual({ success: false, error: { statusCode: 403, code: 'FORBIDDEN', message: 'Access denied' } });
     });
 
     it('reuses permissions already on req.user', async () => {

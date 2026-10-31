@@ -11,6 +11,7 @@ jest.mock('../../../models', () => ({
 }));
 
 const express = require('express');
+const { errorHandler } = require('../../../middleware/errorHandler');
 const request = require('supertest');
 const authService = require('../services/authService');
 const { User } = require('../../../models');
@@ -22,8 +23,12 @@ const buildApp = () => {
     const app = express();
     app.use(express.json());
     app.use('/api/v1/auth', authRoutes);
+    app.use(errorHandler);
     return app;
 };
+
+const errorBody = (statusCode, code, message, details) =>
+    ({ success: false, error: { statusCode, code, message, ...(details !== undefined && { details }) } });
 
 const serviceError = (message, statusCode, extra = {}) =>
     Object.assign(new Error(message), { statusCode }, extra);
@@ -50,7 +55,7 @@ describe('Auth routes', () => {
                 .send({ ...body, role: 'admin' });
 
             expect(res.status).toBe(201);
-            expect(res.body.userId).toBe('u1');
+            expect(res.body.data.userId).toBe('u1');
             expect(authService.signup).toHaveBeenCalledWith({
                 firstName: 'Jane', lastName: 'Doe', email: 'jane@example.com', password: 'Passw0rd'
             });
@@ -60,8 +65,8 @@ describe('Auth routes', () => {
             const res = await request(app).post('/api/v1/auth/register').send({ email: 'bad' });
 
             expect(res.status).toBe(400);
-            expect(res.body.error).toBe('Validation failed');
-            expect(res.body.errors).toEqual(expect.arrayContaining([
+            expect(res.body.error.code).toBe('VALIDATION_ERROR');
+            expect(res.body.error.details).toEqual(expect.arrayContaining([
                 expect.objectContaining({ field: 'Email' }),
                 expect.objectContaining({ field: 'Password' })
             ]));
@@ -74,7 +79,7 @@ describe('Auth routes', () => {
             const res = await request(app).post('/api/v1/auth/register').send(body);
 
             expect(res.status).toBe(409);
-            expect(res.body).toEqual({ error: 'Email already registered' });
+            expect(res.body).toEqual(errorBody(409, 'CONFLICT', 'Email already registered'));
         });
 
         it('returns 500 for an unexpected error', async () => {
@@ -98,7 +103,7 @@ describe('Auth routes', () => {
                 .send(body);
 
             expect(res.status).toBe(200);
-            expect(res.body.accessToken).toBe('a');
+            expect(res.body.data.accessToken).toBe('a');
             expect(authService.login).toHaveBeenCalledWith(expect.objectContaining({
                 email: 'jane@example.com',
                 password: 'anything',
@@ -107,15 +112,15 @@ describe('Auth routes', () => {
             }));
         });
 
-        it('includes needsVerification for unverified users', async () => {
+        it('sends the EMAIL_NOT_VERIFIED code for unverified users', async () => {
             authService.login.mockRejectedValue(
-                serviceError('Please verify your email first', 403, { needsVerification: true })
+                serviceError('Please verify your email first', 403, { code: 'EMAIL_NOT_VERIFIED' })
             );
 
             const res = await request(app).post('/api/v1/auth/login').send(body);
 
             expect(res.status).toBe(403);
-            expect(res.body).toEqual({ error: 'Please verify your email first', needsVerification: true });
+            expect(res.body).toEqual(errorBody(403, 'EMAIL_NOT_VERIFIED', 'Please verify your email first'));
         });
 
         it('returns 401 for bad credentials', async () => {
@@ -157,7 +162,7 @@ describe('Auth routes', () => {
             const res = await request(app).post(`/api/v1/auth${path}`).send(body);
 
             expect(res.status).toBe(400);
-            expect(res.body.error).toBe('Validation failed');
+            expect(res.body.error.code).toBe('VALIDATION_ERROR');
         });
     });
 

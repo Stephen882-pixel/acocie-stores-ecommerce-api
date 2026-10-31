@@ -1,37 +1,30 @@
 
 const authUtils = require('../utils/authUtils');
 const { User } = require('../../../models');
+const { sendError } = require('../../../helpers/response.helper');
 
 const authenticate = async (req,res,next) => {
     try{
         const authHeader = req.headers?.authorization;
 
         if(!authHeader || !authHeader.startsWith('Bearer ')){
-            return res.status(401).json({
-                error:'Authorization token missing or invalid token'
-            });
+            return sendError(res, 401, 'Authorization token missing or invalid token');
         }
 
         const token = authHeader.split(' ')[1];
 
         const decoded = authUtils.verifyAccessToken(token);
         if(!decoded){
-            return res.status(401).json({
-                error: 'Invalid or expired token'
-            });
+            return sendError(res, 401, 'Invalid or expired token');
         }
         const user = await User.findByPk(decoded.userId);
 
         if(!user){
-            return res.status(401).json({
-                error:'User not found'
-            });
+            return sendError(res, 401, 'User not found');
         }
 
         if(user.status !== 'active'){
-            return res.status(403).json({
-                error:'Account is suspended or banned'
-            });
+            return sendError(res, 403, 'Account is suspended or banned');
         }
 
         req.user = {
@@ -42,9 +35,7 @@ const authenticate = async (req,res,next) => {
         next();
     } catch (error){
         console.error('Error in authenticate middleware:',error);
-        res.status(500).json({
-            error:'Authentication failed'
-        });
+        return sendError(res, 500, 'Authentication failed');
     }
 };
 

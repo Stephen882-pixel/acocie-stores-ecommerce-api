@@ -1,40 +1,21 @@
 'use strict';
 
 const checkoutService = require('../services/checkoutService');
-
-const handleError = (res, error) => {
-    console.error('[CheckoutController]', error.message);
-    return res.status(error.statusCode || 500).json({
-        error: error.message || 'Internal server error',
-        ...(error.details && { details: error.details })
-    });
-};
+const { sendSuccess } = require('../../../helpers/response.helper');
 
 const initiateCheckout = async (req, res) => {
-    try {
-        const result = await checkoutService.initiateCheckout(req.user.userId);
-        return res.json({ message: 'Checkout initiated, inventory reserved', ...result });
-    } catch (error) {
-        return handleError(res, error);
-    }
+    const result = await checkoutService.initiateCheckout(req.user.userId);
+    return sendSuccess(res, result, { message: 'Checkout initiated, inventory reserved' });
 };
 
 const getCheckoutSummary = async (req, res) => {
-    try {
-        const summary = await checkoutService.getCheckoutSummary(req.user.userId, req.query.shippingAddressId);
-        return res.json(summary);
-    } catch (error) {
-        return handleError(res, error);
-    }
+    const summary = await checkoutService.getCheckoutSummary(req.user.userId, req.query.shippingAddressId);
+    return sendSuccess(res, summary);
 };
 
 const placeOrder = async (req, res) => {
-    try {
-        const order = await checkoutService.placeOrder(req.user.userId, req.body);
-        return res.status(201).json({ message: 'Order placed successfully', order });
-    } catch (error) {
-        return handleError(res, error);
-    }
+    const order = await checkoutService.placeOrder(req.user.userId, req.body);
+    return sendSuccess(res, order, { statusCode: 201, message: 'Order placed successfully' });
 };
 
 module.exports = {

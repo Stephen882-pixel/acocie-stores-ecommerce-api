@@ -3,11 +3,7 @@ const { PERMISSIONS } = require('../constants/permissions');
 const permissionService = require('./permissionService');
 const auditService = require('./auditService');
 
-const createError = (message, statusCode) => {
-    const error = new Error(message);
-    error.statusCode = statusCode;
-    return error;
-};
+const { createError } = require('../../../helpers/error.helper');
 
 const withPermissions = {
     include: [{ model: Permission, as: 'permissions', attributes: ['key'], through: { attributes: [] } }]

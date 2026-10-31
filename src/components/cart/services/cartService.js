@@ -11,11 +11,7 @@ const {
 } = require('../../../models');
 const { v4: uuidv4 } = require('uuid');
 
-const createError = (message, statusCode) => {
-    const error = new Error(message);
-    error.statusCode = statusCode;
-    return error;
-};
+const { createError } = require('../../../helpers/error.helper');
 
 const getOrCreateCart = async (userId, sessionId) => {
     let cart;
@@ -135,9 +131,7 @@ const addToCart = async ({ productId, variantId, quantity = 1 }, userId, session
         : product.inventory?.availableStock || 0;
 
     if (availableStock < quantity) {
-        const err = createError('Insufficient stock', 400);
-        err.availableStock = availableStock;
-        throw err;
+        throw createError('Insufficient stock', 400, { code: 'INSUFFICIENT_STOCK', details: { availableStock } });
     }
 
     const currentPrice = variant?.price || product.price;
@@ -151,9 +145,7 @@ const addToCart = async ({ productId, variantId, quantity = 1 }, userId, session
     if (existingItem) {
         const newQuantity = existingItem.quantity + quantity;
         if (availableStock < newQuantity) {
-            const err = createError('Insufficient stock for requested quantity', 400);
-            err.availableStock = availableStock;
-            throw err;
+            throw createError('Insufficient stock for requested quantity', 400, { code: 'INSUFFICIENT_STOCK', details: { availableStock } });
         }
         await existingItem.update({ quantity: newQuantity, priceAtAddition: currentPrice });
         cartItem = existingItem;
@@ -209,9 +201,7 @@ const updateCartItem = async (itemId, quantity, userId, sessionId) => {
         : cartItem.product.inventory?.availableStock || 0;
 
     if (availableStock < quantity) {
-        const err = createError('Insufficient stock', 400);
-        err.availableStock = availableStock;
-        throw err;
+        throw createError('Insufficient stock', 400, { code: 'INSUFFICIENT_STOCK', details: { availableStock } });
     }
 
     await cartItem.update({ quantity });

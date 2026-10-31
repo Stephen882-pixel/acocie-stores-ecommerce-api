@@ -1,60 +1,34 @@
 'use strict';
 
 const categoryService = require('../services/categoryService');
-
-const handleError = (res, error) => {
-    console.error('[CategoryController]', error.message);
-    return res.status(error.statusCode || 500).json({
-        error: error.message || 'Internal server error'
-    });
-};
+const { sendSuccess } = require('../../../helpers/response.helper');
 
 const getAllCategories = async (req, res) => {
-    try {
-        const { includeInactive, nested } = req.query;
-        const categories = await categoryService.getAllCategories({
-            includeInactive, nested, userRole: req.user?.role
-        });
-        return res.json({ categories });
-    } catch (error) {
-        return handleError(res, error);
-    }
+    const { includeInactive, nested } = req.query;
+    const categories = await categoryService.getAllCategories({
+        includeInactive, nested, userRole: req.user?.role
+    });
+    return sendSuccess(res, categories);
 };
 
 const getCategoryById = async (req, res) => {
-    try {
-        const category = await categoryService.getCategoryById(req.params.id, req.query.includeProducts);
-        return res.json({ category });
-    } catch (error) {
-        return handleError(res, error);
-    }
+    const category = await categoryService.getCategoryById(req.params.id, req.query.includeProducts);
+    return sendSuccess(res, category);
 };
 
 const createCategory = async (req, res) => {
-    try {
-        const category = await categoryService.createCategory(req.body);
-        return res.status(201).json({ message: 'Category created successfully', category });
-    } catch (error) {
-        return handleError(res, error);
-    }
+    const category = await categoryService.createCategory(req.body);
+    return sendSuccess(res, category, { statusCode: 201, message: 'Category created successfully' });
 };
 
 const updateCategory = async (req, res) => {
-    try {
-        const category = await categoryService.updateCategory(req.params.id, req.body);
-        return res.json({ message: 'Category updated successfully', category });
-    } catch (error) {
-        return handleError(res, error);
-    }
+    const category = await categoryService.updateCategory(req.params.id, req.body);
+    return sendSuccess(res, category, { message: 'Category updated successfully' });
 };
 
 const deleteCategory = async (req, res) => {
-    try {
-        await categoryService.deleteCategory(req.params.id);
-        return res.json({ message: 'Category deleted successfully' });
-    } catch (error) {
-        return handleError(res, error);
-    }
+    await categoryService.deleteCategory(req.params.id);
+    return sendSuccess(res, null, { message: 'Category deleted successfully' });
 };
 
 module.exports = {

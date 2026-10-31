@@ -1,94 +1,45 @@
 'use strict';
 
 const cartService = require('../services/cartService');
-
-const handleError = (res, error) => {
-    console.error('[CartController]', error.message);
-    return res.status(error.statusCode || 500).json({
-        error: error.message || 'Internal server error',
-        ...(error.availableStock !== undefined && { availableStock: error.availableStock }),
-        ...(error.details && { details: error.details })
-    });
-};
+const { sendSuccess } = require('../../../helpers/response.helper');
 
 const getCart = async (req, res) => {
-    try {
-        const userId = req.user?.userId;
-        const sessionId = req.headers['x-session-id'];
-        const cart = await cartService.getCart(userId, sessionId);
-        return res.json({ cart });
-    } catch (error) {
-        return handleError(res, error);
-    }
+    const cart = await cartService.getCart(req.user?.userId, req.headers['x-session-id']);
+    return sendSuccess(res, cart);
 };
 
 const addToCart = async (req, res) => {
-    try {
-        const userId = req.user?.userId;
-        const sessionId = req.headers['x-session-id'];
-        const result = await cartService.addToCart(req.body, userId, sessionId);
-        return res.status(201).json({ message: 'Item added to cart', ...result });
-    } catch (error) {
-        return handleError(res, error);
-    }
+    const result = await cartService.addToCart(req.body, req.user?.userId, req.headers['x-session-id']);
+    return sendSuccess(res, result, { statusCode: 201, message: 'Item added to cart' });
 };
 
 const updateCartItem = async (req, res) => {
-    try {
-        const userId = req.user?.userId;
-        const sessionId = req.headers['x-session-id'];
-        const cartItem = await cartService.updateCartItem(req.params.id, req.body.quantity, userId, sessionId);
-        return res.json({ message: 'Cart item updated', cartItem });
-    } catch (error) {
-        return handleError(res, error);
-    }
+    const cartItem = await cartService.updateCartItem(
+        req.params.id, req.body.quantity, req.user?.userId, req.headers['x-session-id']
+    );
+    return sendSuccess(res, cartItem, { message: 'Cart item updated' });
 };
 
 const removeCartItem = async (req, res) => {
-    try {
-        const userId = req.user?.userId;
-        const sessionId = req.headers['x-session-id'];
-        await cartService.removeCartItem(req.params.id, userId, sessionId);
-        return res.json({ message: 'Item removed from cart' });
-    } catch (error) {
-        return handleError(res, error);
-    }
+    await cartService.removeCartItem(req.params.id, req.user?.userId, req.headers['x-session-id']);
+    return sendSuccess(res, null, { message: 'Item removed from cart' });
 };
 
 const clearCart = async (req, res) => {
-    try {
-        const userId = req.user?.userId;
-        const sessionId = req.headers['x-session-id'];
-        await cartService.clearCart(userId, sessionId);
-        return res.json({ message: 'Cart cleared successfully' });
-    } catch (error) {
-        return handleError(res, error);
-    }
+    await cartService.clearCart(req.user?.userId, req.headers['x-session-id']);
+    return sendSuccess(res, null, { message: 'Cart cleared successfully' });
 };
 
 const validateCart = async (req, res) => {
-    try {
-        const userId = req.user?.userId;
-        const sessionId = req.headers['x-session-id'];
-        const validation = await cartService.validateCart(userId, sessionId);
-        return res.json(validation);
-    } catch (error) {
-        return handleError(res, error);
-    }
+    const validation = await cartService.validateCart(req.user?.userId, req.headers['x-session-id']);
+    return sendSuccess(res, validation);
 };
 
 const mergeCarts = async (req, res) => {
-    try {
-        const userId = req.user.userId;
-        const result = await cartService.mergeCarts(userId, req.body.guestSessionId);
-        return res.json(
-            result.merged
-                ? { message: 'Carts merged successfully' }
-                : { message: 'No guest cart to merge' }
-        );
-    } catch (error) {
-        return handleError(res, error);
-    }
+    const { merged } = await cartService.mergeCarts(req.user.userId, req.body.guestSessionId);
+    return sendSuccess(res, { merged }, {
+        message: merged ? 'Carts merged successfully' : 'No guest cart to merge'
+    });
 };
 
 module.exports = {

@@ -14,11 +14,7 @@ const {
 } = require('../../../models');
 const emailService = require('../../auth/services/emailService');
 
-const createError = (message, statusCode) => {
-    const error = new Error(message);
-    error.statusCode = statusCode;
-    return error;
-};
+const { createError } = require('../../../helpers/error.helper');
 
 const calculateOrderTotals = (items, shippingCost = 0, taxRate = 0.16) => {
     const subtotal = items.reduce((sum, item) => {
@@ -80,9 +76,7 @@ const initiateCheckout = async (userId) => {
     }
 
     if (validationErrors.length > 0) {
-        const err = createError('Cart validation failed', 400);
-        err.details = validationErrors;
-        throw err;
+        throw createError('Cart validation failed', 400, { code: 'INSUFFICIENT_STOCK', details: validationErrors });
     }
 
     for (const item of cart.items) {

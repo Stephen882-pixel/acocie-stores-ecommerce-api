@@ -15,11 +15,8 @@ const {
 const { Op } = require('sequelize');
 const emailService = require('../../auth/services/emailService');
 
-const createError = (message, statusCode) => {
-    const error = new Error(message);
-    error.statusCode = statusCode;
-    return error;
-};
+const { createError } = require('../../../helpers/error.helper');
+const { paginate } = require('../../../helpers/response.helper');
 
 const recordStatusChange = async (orderId, oldStatus, newStatus, userId, reason = null, transaction = null) => {
     await OrderStatusHistory.create({
@@ -80,12 +77,7 @@ const getAllOrders = async ({
 
     return {
         orders,
-        pagination: {
-            total: count,
-            page: parseInt(page),
-            limit: parseInt(limit),
-            pages: Math.ceil(count / limit)
-        }
+        pagination: paginate(count, page, limit)
     };
 };
 
@@ -179,9 +171,9 @@ const confirmOrder = async (id, adminId, paymentReference) => {
     if (!order) throw createError('Order not found', 404);
 
     if (order.status !== 'pending') {
-        const err = createError('Only pending orders can be confirmed', 400);
-        err.currentStatus = order.status;
-        throw err;
+        throw createError('Only pending orders can be confirmed', 400, {
+            code: 'INVALID_ORDER_STATUS', details: { currentStatus: order.status }
+        });
     }
 
     const oldStatus = order.status;

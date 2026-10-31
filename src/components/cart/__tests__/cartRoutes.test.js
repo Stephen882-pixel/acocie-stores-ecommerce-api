@@ -20,6 +20,7 @@ jest.mock('../../../models', () => ({
 }));
 
 const express = require('express');
+const { errorHandler } = require('../../../middleware/errorHandler');
 const request = require('supertest');
 const cartService = require('../services/cartService');
 const { User } = require('../../../models');
@@ -33,8 +34,12 @@ const buildApp = () => {
     const app = express();
     app.use(express.json());
     app.use('/api/v1/cart', cartRoutes);
+    app.use(errorHandler);
     return app;
 };
+
+const errorBody = (statusCode, code, message, details) =>
+    ({ success: false, error: { statusCode, code, message, ...(details !== undefined && { details }) } });
 
 const serviceError = (message, statusCode, extra = {}) =>
     Object.assign(new Error(message), { statusCode }, extra);
@@ -72,7 +77,7 @@ describe('Cart routes', () => {
             const res = await request(app).get('/api/v1/cart').set('X-Session-Id', 'session-1');
 
             expect(res.status).toBe(200);
-            expect(res.body).toEqual({ cart: { id: 'cart-1', items: [] } });
+            expect(res.body).toEqual({ success: true, data: { id: 'cart-1', items: [] } });
             expect(cartService.getCart).toHaveBeenCalledWith(undefined, 'session-1');
             expect(User.findByPk).not.toHaveBeenCalled();
         });
@@ -103,7 +108,7 @@ describe('Cart routes', () => {
             const res = await request(app).get('/api/v1/cart');
 
             expect(res.status).toBe(400);
-            expect(res.body).toEqual({ error: 'User authentication or session ID required' });
+            expect(res.body).toEqual(errorBody(400, 'BAD_REQUEST', 'User authentication or session ID required'));
         });
     });
 
@@ -115,9 +120,9 @@ describe('Cart routes', () => {
 
             expect(res.status).toBe(201);
             expect(res.body).toEqual({
+                success: true,
                 message: 'Item added to cart',
-                cartItem: { id: 'item-1' },
-                sessionId: 'generated-session'
+                data: { cartItem: { id: 'item-1' }, sessionId: 'generated-session' }
             });
             expect(cartService.addToCart).toHaveBeenCalledWith({ productId: PRODUCT_ID, quantity: 1 }, undefined, undefined);
         });
@@ -137,25 +142,29 @@ describe('Cart routes', () => {
             const res = await request(app).post('/api/v1/cart/items').send({ productId: 'nope', quantity: 0 });
 
             expect(res.status).toBe(400);
-            expect(res.body.error).toBe('Validation failed');
+            expect(res.body.error.code).toBe('VALIDATION_ERROR');
             expect(cartService.addToCart).not.toHaveBeenCalled();
         });
 
         it('includes availableStock in an insufficient-stock error', async () => {
-            cartService.addToCart.mockRejectedValue(serviceError('Insufficient stock', 400, { availableStock: 2 }));
+            cartService.addToCart.mockRejectedValue(
+                serviceError('Insufficient stock', 400, { code: 'INSUFFICIENT_STOCK', details: { availableStock: 2 } })
+            );
 
             const res = await request(app).post('/api/v1/cart/items').send({ productId: PRODUCT_ID, quantity: 5 });
 
             expect(res.status).toBe(400);
-            expect(res.body).toEqual({ error: 'Insufficient stock', availableStock: 2 });
+            expect(res.body).toEqual(errorBody(400, 'INSUFFICIENT_STOCK', 'Insufficient stock', { availableStock: 2 }));
         });
 
         it('includes availableStock even when it is zero', async () => {
-            cartService.addToCart.mockRejectedValue(serviceError('Insufficient stock', 400, { availableStock: 0 }));
+            cartService.addToCart.mockRejectedValue(
+                serviceError('Insufficient stock', 400, { code: 'INSUFFICIENT_STOCK', details: { availableStock: 0 } })
+            );
 
             const res = await request(app).post('/api/v1/cart/items').send({ productId: PRODUCT_ID });
 
-            expect(res.body.availableStock).toBe(0);
+            expect(res.body.error.details.availableStock).toBe(0);
         });
     });
 
@@ -169,7 +178,7 @@ describe('Cart routes', () => {
                 .send({ quantity: 3 });
 
             expect(res.status).toBe(200);
-            expect(res.body).toEqual({ message: 'Cart item updated', cartItem: { id: 'item-1', quantity: 3 } });
+            expect(res.body).toEqual({ success: true, message: 'Cart item updated', data: { id: 'item-1', quantity: 3 } });
             expect(cartService.updateCartItem).toHaveBeenCalledWith('item-1', 3, undefined, 'session-1');
         });
 
@@ -196,7 +205,7 @@ describe('Cart routes', () => {
             const res = await request(app).delete('/api/v1/cart/items/item-1').set('Authorization', `Bearer ${token}`);
 
             expect(res.status).toBe(200);
-            expect(res.body).toEqual({ message: 'Item removed from cart' });
+            expect(res.body).toEqual({ success: true, message: 'Item removed from cart', data: null });
             expect(cartService.removeCartItem).toHaveBeenCalledWith('item-1', 'user-1', undefined);
         });
     });
@@ -208,7 +217,7 @@ describe('Cart routes', () => {
             const res = await request(app).delete('/api/v1/cart/clear').set('X-Session-Id', 'session-1');
 
             expect(res.status).toBe(200);
-            expect(res.body).toEqual({ message: 'Cart cleared successfully' });
+            expect(res.body).toEqual({ success: true, message: 'Cart cleared successfully', data: null });
             expect(cartService.clearCart).toHaveBeenCalledWith(undefined, 'session-1');
             expect(cartService.removeCartItem).not.toHaveBeenCalled();
         });
@@ -222,7 +231,7 @@ describe('Cart routes', () => {
             const res = await request(app).get('/api/v1/cart/validate').set('Authorization', `Bearer ${token}`);
 
             expect(res.status).toBe(200);
-            expect(res.body).toEqual(validation);
+            expect(res.body).toEqual({ success: true, data: validation });
         });
     });
 

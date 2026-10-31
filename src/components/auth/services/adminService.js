@@ -2,11 +2,8 @@ const { User, LoginHistory } = require('../../../models');
 const { Op } = require('sequelize');
 const userRoleService = require('../../rbac/services/userRoleService');
 
-const createError = (message, statusCode) => {
-    const error = new Error(message);
-    error.statusCode = statusCode;
-    return error;
-};
+const { createError } = require('../../../helpers/error.helper');
+const { paginate } = require('../../../helpers/response.helper');
 
 const getAllUsers = async ({ page = 1, limit = 20, role, status, search }) => {
     const offset = (page - 1) * limit;
@@ -32,12 +29,7 @@ const getAllUsers = async ({ page = 1, limit = 20, role, status, search }) => {
 
     return {
         users,
-        pagination: {
-            total: count,
-            page: parseInt(page),
-            limit: parseInt(limit),
-            pages: Math.ceil(count / limit)
-        }
+        pagination: paginate(count, page, limit)
     };
 };
 
@@ -149,12 +141,7 @@ const getVendorRequests = async ({ page = 1, limit = 20 }) => {
 
     return {
         users,
-        pagination: {
-            total: count,
-            page: parseInt(page),
-            limit: parseInt(limit),
-            pages: Math.ceil(count / limit)
-        }
+        pagination: paginate(count, page, limit)
     };
 };
 

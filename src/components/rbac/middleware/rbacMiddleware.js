@@ -1,5 +1,6 @@
 const { PERMISSIONS } = require('../constants/permissions');
 const permissionService = require('../services/permissionService');
+const { sendError } = require('../../../helpers/response.helper');
 
 const KNOWN_KEYS = new Set(Object.values(PERMISSIONS));
 
@@ -16,7 +17,7 @@ const requirePermission = (...keys) => {
 
     return async (req, res, next) => {
         if (!req.user) {
-            return res.status(401).json({ error: 'Authentication required' });
+            return sendError(res, 401, 'Authentication required');
         }
 
         try {
@@ -25,12 +26,12 @@ const requirePermission = (...keys) => {
             }
         } catch (error) {
             console.error('Error in requirePermission middleware:', error);
-            return res.status(500).json({ error: 'Authorization failed' });
+            return sendError(res, 500, 'Authorization failed');
         }
 
         if (!keys.some((key) => permissionService.can(req.user, key))) {
             console.warn(`[RBAC] Access denied: user=${req.user.userId} role=${req.user.role} ${req.method} ${req.originalUrl} needs ${keys.join(' | ')}`);
-            return res.status(403).json({ error: 'Access denied' });
+            return sendError(res, 403, 'Access denied');
         }
 
         next();

@@ -282,7 +282,7 @@ describe('cartService', () => {
                 cartService.addToCart({ productId: PRODUCT_ID, quantity: 2 }, 'user-1'),
                 'Insufficient stock for requested quantity',
                 400,
-                { availableStock: 10 }
+                { code: 'INSUFFICIENT_STOCK', details: { availableStock: 10 } }
             );
         });
 
@@ -293,7 +293,7 @@ describe('cartService', () => {
                 cartService.addToCart({ productId: PRODUCT_ID, quantity: 2 }, 'user-1'),
                 'Insufficient stock',
                 400,
-                { availableStock: 1 }
+                { code: 'INSUFFICIENT_STOCK', details: { availableStock: 1 } }
             );
             expect(CartItem.create).not.toHaveBeenCalled();
         });
@@ -305,7 +305,7 @@ describe('cartService', () => {
                 cartService.addToCart({ productId: PRODUCT_ID }, 'user-1'),
                 'Insufficient stock',
                 400,
-                { availableStock: 0 }
+                { code: 'INSUFFICIENT_STOCK', details: { availableStock: 0 } }
             );
         });
 
@@ -385,7 +385,7 @@ describe('cartService', () => {
                 cartService.updateCartItem('item-1', 4, 'user-1'),
                 'Insufficient stock',
                 400,
-                { availableStock: 3 }
+                { code: 'INSUFFICIENT_STOCK', details: { availableStock: 3 } }
             );
         });
 

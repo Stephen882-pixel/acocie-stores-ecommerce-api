@@ -10,6 +10,8 @@
  *   validate(schema, 'params') → validates req.params
  */
 
+const { sendError } = require('../helpers/response.helper');
+
 const validate = (schema, source = 'body') => {
     return (req, res, next) => {
         const { error, value } = schema.validate(req[source], {
@@ -24,10 +26,7 @@ const validate = (schema, source = 'body') => {
                 message: detail.message.replace(/['"]/g, '') 
             }));
 
-            return res.status(400).json({
-                error: 'Validation failed',
-                errors
-            });
+            return sendError(res, 400, 'Validation failed', { code: 'VALIDATION_ERROR', details: errors });
         }
 
         req[source] = value;
