@@ -19,6 +19,8 @@ const checkoutRoutes = require('./src/components/checkout/routes/checkoutRoutes'
 const orderRoutes = require('./src/components/orders/routes/orderRoutes');
 const vendorOrderRoutes = require('./src/components/orders/routes/vendorOrderRoutes');
 const adminOrderRoutes = require('./src/components/orders/routes/adminOrderRoutes');
+const rbacRoutes = require('./src/components/rbac/routes/rbacRoutes');
+const permissionService = require('./src/components/rbac/services/permissionService');
 
 const app = express();
 
@@ -126,6 +128,7 @@ app.get('/', (req, res) => {
       orders: '/api/v1/orders',              
       vendor: '/api/v1/vendor',              
       adminOrders: '/api/v1/admin-orders',   
+      rbac: '/api/v1/rbac',
       health: '/health',
       docs: '/api-docs'
     }
@@ -145,6 +148,7 @@ app.use('/api/v1/checkout',checkoutRoutes);
 app.use('/api/v1/orders',orderRoutes);
 app.use('/api/v1/vendor',vendorOrderRoutes);
 app.use('/api/v1/admin-orders',adminOrderRoutes);
+app.use('/api/v1/rbac',rbacRoutes);
 
 app.use((req, res) => {
   res.status(404).json({ 
@@ -168,6 +172,7 @@ const PORT = process.env.PORT || 5002;
 const startServer = async () => {
     try{
         await testConnection();
+        await permissionService.syncPermissions();
 
         app.listen(PORT, () =>{
             const env = process.env.NODE_ENV || 'development';

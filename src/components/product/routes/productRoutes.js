@@ -3,7 +3,8 @@ const express = require('express');
 const router = express.Router();
 const productController = require('../controllers/productController');
 const authenticate = require('../../auth/middleware/authMiddleware');
-const { authorize, isVendorOrAdmin } = require('../../auth/middleware/roleMiddleware');
+const { requirePermission } = require('../../rbac/middleware/rbacMiddleware');
+const { PERMISSIONS: P } = require('../../rbac/constants/permissions');
 const { uploadProductImages, handleMulterError } = require('../../../helpers/multer.helper');
 
 router.get('/',        productController.getAllProducts);
@@ -14,7 +15,7 @@ router.get('/:id',     productController.getProductById);
 // multipart/form-data – validation happens inside the controller after JSON fields are parsed
 router.post('/',
     authenticate,
-    isVendorOrAdmin,
+    requirePermission(P.PRODUCT_CREATE),
     uploadProductImages,
     handleMulterError,
     productController.createProduct
@@ -22,12 +23,12 @@ router.post('/',
 
 router.put('/:id',
     authenticate,
-    isVendorOrAdmin,
+    requirePermission(P.PRODUCT_UPDATE_OWN, P.PRODUCT_UPDATE_ANY),
     uploadProductImages,
     handleMulterError,
     productController.updateProduct
 );
 
-router.delete('/:id', authenticate, isVendorOrAdmin, productController.deleteProduct);
+router.delete('/:id', authenticate, requirePermission(P.PRODUCT_DELETE_OWN, P.PRODUCT_DELETE_ANY), productController.deleteProduct);
 
 module.exports = router;

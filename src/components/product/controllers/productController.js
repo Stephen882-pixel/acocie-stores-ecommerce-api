@@ -85,8 +85,7 @@ const createProduct = async (req, res) => {
             fields,
             uploadedImages,
             uploadedVariantImages,
-            req.user.role,
-            req.user.userId
+            req.user
         );
 
         return res.status(201).json({ message: 'Product created successfully', product });
@@ -117,8 +116,7 @@ const updateProduct = async (req, res) => {
             fields,
             uploadedImages,
             uploadedVariantImages,
-            req.user.role,
-            req.user.userId
+            req.user
         );
 
         return res.json({ message: 'Product updated successfully', product });
@@ -129,7 +127,7 @@ const updateProduct = async (req, res) => {
 
 const deleteProduct = async (req, res) => {
     try {
-        await productService.deleteProduct(req.params.id, req.user.role, req.user.userId);
+        await productService.deleteProduct(req.params.id, req.user);
         return res.json({ message: 'Product deleted successfully' });
     } catch (error) {
         return handleError(res, error);

@@ -1,5 +1,6 @@
 const { User, LoginHistory } = require('../../../models');
 const { Op } = require('sequelize');
+const userRoleService = require('../../rbac/services/userRoleService');
 
 const createError = (message, statusCode) => {
     const error = new Error(message);
@@ -80,31 +81,8 @@ const updateUserStatus = async (id, status, requestingUser) => {
     };
 };
 
-const updateUserRole = async (id, role, requestingUser) => {
-    if (!['customer', 'vendor', 'admin', 'super_admin'].includes(role)) {
-        throw createError('Invalid role value', 400);
-    }
-
-    if (role === 'super_admin' && requestingUser.role !== 'super_admin') {
-        throw createError('Only super admin can assign super admin role', 403);
-    }
-
-    const user = await User.findByPk(id);
-    if (!user) {
-        throw createError('User not found', 404);
-    }
-
-    if (user.role === 'super_admin' && requestingUser.role !== 'super_admin') {
-        throw createError('Cannot modify super admin accounts', 403);
-    }
-
-    await user.update({ role });
-
-    return {
-        message: `User role updated to ${role}`,
-        user: { id: user.id, email: user.email, role: user.role }
-    };
-};
+// Deprecated: use PUT /rbac/users/:userId/role.
+const updateUserRole = (id, role, requestingUser) => userRoleService.changeRole(id, role, requestingUser);
 
 const deleteUser = async (id, requestingUser) => {
     const user = await User.findByPk(id);
@@ -180,7 +158,7 @@ const getVendorRequests = async ({ page = 1, limit = 20 }) => {
     };
 };
 
-const approveVendor = async (id, requestingUser) => {
+const assertPendingVendor = async (id) => {
     const user = await User.findByPk(id);
     if (!user) {
         throw createError('User not found', 404);
@@ -189,31 +167,20 @@ const approveVendor = async (id, requestingUser) => {
     if (user.role !== 'vendor_pending') {
         throw createError('User does not have a pending vendor request', 400);
     }
+};
 
-    await user.update({ role: 'vendor' });
+const approveVendor = async (id, requestingUser) => {
+    await assertPendingVendor(id);
+    const { user } = await userRoleService.changeRole(id, 'vendor', requestingUser);
 
-    return {
-        message: 'Vendor request approved. User is now a vendor.',
-        user: { id: user.id, email: user.email, role: user.role }
-    };
+    return { message: 'Vendor request approved. User is now a vendor.', user };
 };
 
 const rejectVendor = async (id, requestingUser) => {
-    const user = await User.findByPk(id);
-    if (!user) {
-        throw createError('User not found', 404);
-    }
+    await assertPendingVendor(id);
+    const { user } = await userRoleService.changeRole(id, 'customer', requestingUser);
 
-    if (user.role !== 'vendor_pending') {
-        throw createError('User does not have a pending vendor request', 400);
-    }
-
-    await user.update({ role: 'customer' });
-
-    return {
-        message: 'Vendor request rejected. User has been set to customer.',
-        user: { id: user.id, email: user.email, role: user.role }
-    };
+    return { message: 'Vendor request rejected. User has been set to customer.', user };
 };
 
 module.exports = {

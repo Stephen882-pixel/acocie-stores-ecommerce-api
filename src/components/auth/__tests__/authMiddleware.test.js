@@ -26,7 +26,7 @@ describe('authenticate middleware', () => {
 
     it('attaches req.user and calls next for a valid token and active user', async () => {
         const token = authUtils.generateAccessToken('user-1', 'jane@example.com', 'vendor');
-        User.findByPk.mockResolvedValue({ id: 'user-1', status: 'active' });
+        User.findByPk.mockResolvedValue({ id: 'user-1', status: 'active', role: 'vendor' });
         const req = reqWithAuth(`Bearer ${token}`);
 
         await authenticate(req, res, next);
@@ -35,6 +35,16 @@ describe('authenticate middleware', () => {
         expect(req.user).toEqual({ userId: 'user-1', email: 'jane@example.com', role: 'vendor' });
         expect(next).toHaveBeenCalledTimes(1);
         expect(res.status).not.toHaveBeenCalled();
+    });
+
+    it('takes the role from the database, not from the token', async () => {
+        const token = authUtils.generateAccessToken('user-1', 'jane@example.com', 'admin');
+        User.findByPk.mockResolvedValue({ id: 'user-1', status: 'active', role: 'customer' });
+        const req = reqWithAuth(`Bearer ${token}`);
+
+        await authenticate(req, res, next);
+
+        expect(req.user.role).toBe('customer');
     });
 
     it.each([

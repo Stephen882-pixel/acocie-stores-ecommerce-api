@@ -3,6 +3,8 @@
 const { sequelize, Product, Category, ProductImage, ProductVariant, Inventory, User } = require('../../../models');
 const { Op } = require('sequelize');
 const { deleteFromS3 } = require('../../../helpers/s3.helper');
+const { can } = require('../../rbac/services/permissionService');
+const { PERMISSIONS: P } = require('../../rbac/constants/permissions');
 
 const createError = (message, statusCode) => {
     const error = new Error(message);
@@ -96,10 +98,9 @@ const getProductById = async (id, userRole) => {
  * @param {object}  fields               - parsed form fields (from controller)
  * @param {Array}   uploadedImages        - [{ key, url }] from S3 for the product gallery
  * @param {Array}   uploadedVariantImages - [{ key, url }] from S3 for per-variant images
- * @param {string}  userRole
- * @param {string}  requestingUserId
+ * @param {object}  actor                 - req.user (userId + permissions)
  */
-const createProduct = async (fields, uploadedImages = [], uploadedVariantImages = [], userRole, requestingUserId) => {
+const createProduct = async (fields, uploadedImages = [], uploadedVariantImages = [], actor) => {
     const {
         categoryId, name, description, shortDescription, sku, price, comparePrice, costPrice,
         stockQuantity, lowStockThreshold, weight, dimensions, tags, metaTitle, metaDescription,
@@ -124,7 +125,7 @@ const createProduct = async (fields, uploadedImages = [], uploadedVariantImages 
         counter++;
     }
 
-    const vendorId = userRole === 'vendor' ? requestingUserId : (fields.vendorId || requestingUserId);
+    const vendorId = can(actor, P.PRODUCT_ASSIGN_VENDOR) ? (fields.vendorId || actor.userId) : actor.userId;
 
     const product = await Product.create({
         vendorId,
@@ -217,14 +218,13 @@ const createProduct = async (fields, uploadedImages = [], uploadedVariantImages 
  * @param {object} fields              - parsed form fields
  * @param {Array}  uploadedImages       - new S3 images [{ key, url }] — APPENDED to existing
  * @param {Array}  uploadedVariantImages
- * @param {string} userRole
- * @param {string} requestingUserId
+ * @param {object} actor                - req.user (userId + permissions)
  */
-const updateProduct = async (id, fields, uploadedImages = [], uploadedVariantImages = [], userRole, requestingUserId) => {
+const updateProduct = async (id, fields, uploadedImages = [], uploadedVariantImages = [], actor) => {
     const product = await Product.findByPk(id);
     if (!product) throw createError('Product not found', 404);
 
-    if (userRole === 'vendor' && product.vendorId !== requestingUserId) {
+    if (!can(actor, P.PRODUCT_UPDATE_ANY) && product.vendorId !== actor.userId) {
         throw createError('You can only update your own products', 403);
     }
 
@@ -278,11 +278,11 @@ const updateProduct = async (id, fields, uploadedImages = [], uploadedVariantIma
     return updatedProduct;
 };
 
-const deleteProduct = async (id, userRole, requestingUserId) => {
+const deleteProduct = async (id, actor) => {
     const product = await Product.findByPk(id);
     if (!product) throw createError('Product not found', 404);
 
-    if (userRole === 'vendor' && product.vendorId !== requestingUserId) {
+    if (!can(actor, P.PRODUCT_DELETE_ANY) && product.vendorId !== actor.userId) {
         throw createError('You can only delete your own products', 403);
     }
 
