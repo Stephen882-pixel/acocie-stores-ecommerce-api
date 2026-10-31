@@ -30,6 +30,7 @@ const recordStatusChange = async (orderId, oldStatus, newStatus, userId, reason 
     }, transaction ? { transaction } : {});
 };
 
+// vendorId undefined = all vendors (admin read scope)
 const getVendorOrders = async (vendorId, { page = 1, limit = 20, status, startDate, endDate }) => {
     const offset = (page - 1) * limit;
     const where = {};
@@ -47,7 +48,7 @@ const getVendorOrders = async (vendorId, { page = 1, limit = 20, status, startDa
             {
                 model: OrderItem,
                 as: 'items',
-                where: { vendorId },
+                where: vendorId ? { vendorId } : undefined,
                 required: true,
                 include: [{ model: Product, as: 'product', attributes: ['id', 'name', 'slug'] }]
             },
@@ -77,7 +78,7 @@ const getVendorOrderById = async (id, vendorId) => {
             {
                 model: OrderItem,
                 as: 'items',
-                where: { vendorId },
+                where: vendorId ? { vendorId } : undefined,
                 required: true,
                 include: [{ model: Product, as: 'product' }]
             },

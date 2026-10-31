@@ -1,6 +1,11 @@
 'use strict';
 
 const vendorOrderService = require('../services/vendorOrderService');
+const { can } = require('../../rbac/services/permissionService');
+const { PERMISSIONS: P } = require('../../rbac/constants/permissions');
+
+// Admins read all vendors' orders (optionally one vendor); vendors read only their own.
+const readScopeVendorId = (req) => can(req.user, P.VENDOR_ORDER_READ_ANY) ? req.query.vendorId : req.user.userId;
 
 const handleError = (res, error) => {
     console.error('[VendorOrderController]', error.message);
@@ -12,7 +17,7 @@ const handleError = (res, error) => {
 
 const getVendorOrders = async (req, res) => {
     try {
-        const result = await vendorOrderService.getVendorOrders(req.user.userId, req.query);
+        const result = await vendorOrderService.getVendorOrders(readScopeVendorId(req), req.query);
         return res.json(result);
     } catch (error) {
         return handleError(res, error);
@@ -21,7 +26,7 @@ const getVendorOrders = async (req, res) => {
 
 const getVendorOrderById = async (req, res) => {
     try {
-        const order = await vendorOrderService.getVendorOrderById(req.params.id, req.user.userId);
+        const order = await vendorOrderService.getVendorOrderById(req.params.id, readScopeVendorId(req));
         return res.json({ order });
     } catch (error) {
         return handleError(res, error);

@@ -24,6 +24,11 @@ const OrderTrackingModel = require('../components/orders/models/OrderTracking');
 const OrderCancellationModel = require('../components/orders/models/OrderCancellation');
 const OrderNoteModel = require('../components/orders/models/OrderNote');
 
+const RoleModel = require('../components/rbac/models/Role');
+const PermissionModel = require('../components/rbac/models/Permission');
+const RolePermissionModel = require('../components/rbac/models/RolePermission');
+const RbacAuditLogModel = require('../components/rbac/models/RbacAuditLog');
+
 const User = UserModel(sequelize);
 const OTPCode = OTPCodeModel(sequelize);
 const RefreshToken = RefreshTokenModel(sequelize);
@@ -46,6 +51,11 @@ const OrderTracking = OrderTrackingModel(sequelize);
 const OrderCancellation = OrderCancellationModel(sequelize);
 const OrderNote = OrderNoteModel(sequelize);
 
+const Role = RoleModel(sequelize);
+const Permission = PermissionModel(sequelize);
+const RolePermission = RolePermissionModel(sequelize);
+const RbacAuditLog = RbacAuditLogModel(sequelize);
+
 
 
 
@@ -67,7 +77,11 @@ const models = {
   OrderStatusHistory,
   OrderTracking,
   OrderCancellation,
-  OrderNote
+  OrderNote,
+  Role,
+  Permission,
+  RolePermission,
+  RbacAuditLog
 };
 
 

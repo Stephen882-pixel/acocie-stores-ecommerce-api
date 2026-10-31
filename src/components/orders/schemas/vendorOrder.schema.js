@@ -15,7 +15,8 @@ const getVendorOrdersQuery = Joi.object({
                    .optional()
                    .label('Status'),
     startDate: Joi.date().iso().optional().label('Start date'),
-    endDate:   Joi.date().iso().optional().label('End date')
+    endDate:   Joi.date().iso().optional().label('End date'),
+    vendorId:  Joi.string().uuid().optional().label('Vendor ID')
 });
 
 /**

@@ -1,7 +1,7 @@
 /**
  * Route-level tests for /api/v1/categories.
  *
- * Exercises the real router, authenticate + isAdmin, Joi validation and
+ * Exercises the real router, authenticate + requirePermission, Joi validation and
  * controller over HTTP. The service layer and DB models are mocked, so these
  * tests check request/response wiring, not business logic (see categoryService.test.js).
  */
@@ -9,6 +9,12 @@ jest.mock('../services/categoryService');
 jest.mock('../../../models', () => ({
     User: { findByPk: jest.fn() }
 }));
+// Resolve permissions from the code defaults instead of the database.
+jest.mock('../../rbac/services/permissionService', () => {
+    const actual = jest.requireActual('../../rbac/constants/permissions');
+    const { can } = jest.requireActual('../../rbac/services/permissionService');
+    return { can, getRolePermissions: async (role) => new Set(actual.DEFAULT_ROLE_PERMISSIONS[role] || []) };
+});
 
 const express = require('express');
 const request = require('supertest');
@@ -29,7 +35,11 @@ const buildApp = () => {
 
 const serviceError = (message, statusCode) => Object.assign(new Error(message), { statusCode });
 
-const tokenFor = (role) => authUtils.generateAccessToken('user-1', 'jane@example.com', role);
+// authenticate reads the role from the database, so the mocked user must have it too.
+const tokenFor = (role) => {
+    User.findByPk.mockResolvedValue({ id: 'user-1', status: 'active', role });
+    return authUtils.generateAccessToken('user-1', 'jane@example.com', role);
+};
 
 describe('Category routes', () => {
     let app;

@@ -37,7 +37,7 @@ const authenticate = async (req,res,next) => {
         req.user = {
             userId:decoded.userId,
             email:decoded.email,
-            role:decoded.role
+            role:user.role
         };
         next();
     } catch (error){
