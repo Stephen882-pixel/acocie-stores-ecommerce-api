@@ -29,6 +29,8 @@ const PermissionModel = require('../components/rbac/models/Permission');
 const RolePermissionModel = require('../components/rbac/models/RolePermission');
 const RbacAuditLogModel = require('../components/rbac/models/RbacAuditLog');
 
+const SseEventModel = require('../components/events/models/SseEvent');
+
 const User = UserModel(sequelize);
 const OTPCode = OTPCodeModel(sequelize);
 const RefreshToken = RefreshTokenModel(sequelize);
@@ -56,6 +58,8 @@ const Permission = PermissionModel(sequelize);
 const RolePermission = RolePermissionModel(sequelize);
 const RbacAuditLog = RbacAuditLogModel(sequelize);
 
+const SseEvent = SseEventModel(sequelize);
+
 
 
 
@@ -81,7 +85,8 @@ const models = {
   Role,
   Permission,
   RolePermission,
-  RbacAuditLog
+  RbacAuditLog,
+  SseEvent
 };
 
 

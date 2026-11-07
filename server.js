@@ -20,6 +20,10 @@ const orderRoutes = require('./src/components/orders/routes/orderRoutes');
 const vendorOrderRoutes = require('./src/components/orders/routes/vendorOrderRoutes');
 const adminOrderRoutes = require('./src/components/orders/routes/adminOrderRoutes');
 const rbacRoutes = require('./src/components/rbac/routes/rbacRoutes');
+const eventRoutes = require('./src/components/events/routes/eventRoutes');
+const eventHub = require('./src/components/events/services/eventHub');
+const eventListener = require('./src/components/events/services/eventListener');
+const eventRetention = require('./src/components/events/jobs/retention');
 const permissionService = require('./src/components/rbac/services/permissionService');
 const { notFound, errorHandler } = require('./src/middleware/errorHandler');
 
@@ -71,7 +75,8 @@ morgan.token('formatted-date', () => {
 
 app.use(morgan((tokens, req, res) => {
     const method   = tokens.method(req, res);
-    const url      = tokens.url(req, res);
+    // Do not log the SSE token.
+    const url      = req.originalUrl.startsWith('/api/v1/events/stream') ? '/api/v1/events/stream' : tokens.url(req, res);
     const status   = parseInt(tokens.status(req, res), 10);
     const ms       = tokens['response-time'](req, res);
     const time     = tokens['formatted-date'](req, res);
@@ -130,6 +135,7 @@ app.get('/', (req, res) => {
       vendor: '/api/v1/vendor',              
       adminOrders: '/api/v1/admin-orders',   
       rbac: '/api/v1/rbac',
+      events: '/api/v1/events',
       health: '/health',
       docs: '/api-docs'
     }
@@ -150,6 +156,7 @@ app.use('/api/v1/orders',orderRoutes);
 app.use('/api/v1/vendor',vendorOrderRoutes);
 app.use('/api/v1/admin-orders',adminOrderRoutes);
 app.use('/api/v1/rbac',rbacRoutes);
+app.use('/api/v1/events',eventRoutes);
 
 app.use(notFound);
 app.use(errorHandler);
@@ -161,8 +168,11 @@ const startServer = async () => {
     try{
         await testConnection();
         await permissionService.syncPermissions();
+        eventHub.start();
+        eventRetention.start();
+        await eventListener.start();
 
-        app.listen(PORT, () =>{
+        const server = app.listen(PORT, () =>{
             const env = process.env.NODE_ENV || 'development';
             console.log(`\n${BOLD}${CYAN}  ╔══════════════════════════════════════╗${RESET}`);
             console.log(`${BOLD}${CYAN}  ║      Acocie Stores API Server        ║${RESET}`);
@@ -173,6 +183,13 @@ const startServer = async () => {
             console.log(`  ${DIM}Health      ${RESET}  ${CYAN}http://localhost:${PORT}/health${RESET}`);
             console.log(`  ${DIM}API Docs    ${RESET}  ${CYAN}http://localhost:${PORT}/api-docs${RESET}`);
             console.log(`  ${DIM}Started at  ${RESET}  ${new Date().toLocaleTimeString()}\n`);
+        });
+
+        // Tell the SSE clients to reconnect (to another task), then stop.
+        process.on('SIGTERM', async () => {
+            eventHub.shutdown();
+            await eventListener.stop();
+            server.close(() => process.exit(0));
         });
     } catch(error){
         console.error('Failed to start server:', error);

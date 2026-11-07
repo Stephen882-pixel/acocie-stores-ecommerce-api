@@ -13,6 +13,8 @@ const {
     sequelize
 } = require('../../../models');
 const emailService = require('../../auth/services/emailService');
+const eventService = require('../../events/services/eventService');
+const { EVENTS, LEVELS } = require('../../events/constants/events');
 
 const { createError } = require('../../../helpers/error.helper');
 
@@ -226,6 +228,12 @@ const placeOrder = async (userId, { shippingAddressId, billingAddressId, payment
         }
 
         await CartItem.destroy({ where: { cartId: cart.id }, transaction });
+
+        const created = { event: EVENTS.ORDER_CREATED, feature: 'orders', data: { orderId: order.id, orderNumber } };
+        const vendorIds = cart.items.map(item => item.product.vendorId);
+        await eventService.record(transaction, { ...created, level: LEVELS.STANDARD, to: { userIds: [userId] } });
+        await eventService.record(transaction, { ...created, level: LEVELS.HIGH, to: { userIds: vendorIds } });
+        await eventService.record(transaction, { ...created, level: LEVELS.SILENT, to: { role: 'admin' } });
         await transaction.commit();
 
         const user = await User.findByPk(userId);

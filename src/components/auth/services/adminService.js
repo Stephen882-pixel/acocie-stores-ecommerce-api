@@ -1,6 +1,8 @@
-const { User, LoginHistory } = require('../../../models');
+const { User, LoginHistory, sequelize } = require('../../../models');
 const { Op } = require('sequelize');
 const userRoleService = require('../../rbac/services/userRoleService');
+const eventService = require('../../events/services/eventService');
+const { EVENTS, LEVELS } = require('../../events/constants/events');
 
 const { createError } = require('../../../helpers/error.helper');
 const { paginate } = require('../../../helpers/response.helper');
@@ -65,7 +67,18 @@ const updateUserStatus = async (id, status, requestingUser) => {
         throw createError('Cannot modify super admin accounts', 403);
     }
 
-    await user.update({ status });
+    // Close the user's open event streams in the same transaction (SSE_DESIGN.md, section 6).
+    await sequelize.transaction(async (transaction) => {
+        await user.update({ status }, { transaction });
+        if (status !== 'active') {
+            await eventService.record(transaction, {
+                event: EVENTS.SESSION_REVOKED,
+                feature: 'system',
+                level: LEVELS.HIGH,
+                to: { userIds: [user.id] }
+            });
+        }
+    });
 
     return {
         message: `User status updated to ${status}`,
