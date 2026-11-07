@@ -6,7 +6,8 @@ const STATUS_CODES = {
     409: 'CONFLICT',
     413: 'PAYLOAD_TOO_LARGE',
     429: 'TOO_MANY_REQUESTS',
-    500: 'INTERNAL_ERROR'
+    500: 'INTERNAL_ERROR',
+    503: 'SERVICE_UNAVAILABLE'
 };
 
 const sendSuccess = (res, data = null, { statusCode = 200, message, meta } = {}) =>

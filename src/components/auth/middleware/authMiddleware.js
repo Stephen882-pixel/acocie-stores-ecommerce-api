@@ -14,7 +14,8 @@ const authenticate = async (req,res,next) => {
         const token = authHeader.split(' ')[1];
 
         const decoded = authUtils.verifyAccessToken(token);
-        if(!decoded){
+        // An SSE token is only for GET /events/stream.
+        if(!decoded || decoded.scope === 'sse'){
             return sendError(res, 401, 'Invalid or expired token');
         }
         const user = await User.findByPk(decoded.userId);

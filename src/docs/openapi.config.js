@@ -17,6 +17,7 @@ const docFiles = [
     path.join(__dirname, '../components/orders/docs/orders.yml'),
     path.join(__dirname, '../components/orders/docs/adminOrders.yml'),
     path.join(__dirname, '../components/orders/docs/vendorOrders.yml'),
+    path.join(__dirname, '../components/events/docs/events.yml'),
 ];
 
 // ─── Deep merge helper ────────────────────────────────────────────────────────
@@ -80,6 +81,7 @@ Most endpoints require a Bearer JWT access token.  Obtain one via **POST /api/v1
         { name: 'Orders',        description: 'Customer order tracking & management' },
         { name: 'Admin — Orders',description: 'Admin order fulfilment & control' },
         { name: 'Vendor — Orders',description: 'Vendor order fulfilment' },
+        { name: 'Events',        description: 'Live events (Server-Sent Events)' },
     ],
     components: {
         securitySchemes: {

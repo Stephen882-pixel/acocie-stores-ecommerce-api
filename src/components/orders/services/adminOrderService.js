@@ -14,6 +14,8 @@ const {
 } = require('../../../models');
 const { Op } = require('sequelize');
 const emailService = require('../../auth/services/emailService');
+const eventService = require('../../events/services/eventService');
+const { EVENTS, LEVELS } = require('../../events/constants/events');
 
 const { createError } = require('../../../helpers/error.helper');
 const { paginate } = require('../../../helpers/response.helper');
@@ -151,6 +153,13 @@ const updateOrderStatus = async (id, adminId, { status, reason }) => {
 
         await order.update({ status }, { transaction });
         await recordStatusChange(id, oldStatus, status, adminId, reason || 'Admin update', transaction);
+        await eventService.record(transaction, {
+            event: EVENTS.ORDER_STATUS_CHANGED,
+            feature: 'orders',
+            level: LEVELS.STANDARD,
+            to: { userIds: [order.userId] },
+            data: { orderId: order.id, orderNumber: order.orderNumber, from: oldStatus, to: status }
+        });
         await transaction.commit();
 
         emailService.sendOrderStatusUpdateNotification(order.user.email, order.user.firstName, status)
