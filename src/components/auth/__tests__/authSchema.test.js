@@ -74,10 +74,18 @@ describe('auth.schema', () => {
     describe('resetPassword', () => {
         it('rejects a confirmPassword that does not match', () => {
             const { error } = validate(authSchema.resetPassword, {
-                email: 'a@b.com', newPassword: 'Passw0rd', confirmPassword: 'Passw0rd1'
+                resetToken: 'r-token', newPassword: 'Passw0rd', confirmPassword: 'Passw0rd1'
             });
 
             expect(error.details[0].message).toBe('Passwords do not match');
+        });
+
+        it('requires the reset token; an email alone is not accepted', () => {
+            const { error } = validate(authSchema.resetPassword, {
+                email: 'a@b.com', newPassword: 'Passw0rd', confirmPassword: 'Passw0rd'
+            });
+
+            expect(error.details[0].message).toBe('"Reset token" is required');
         });
     });
 

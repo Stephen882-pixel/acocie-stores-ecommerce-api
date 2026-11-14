@@ -197,7 +197,9 @@ paths:
             application/json:
               example:
                 message: OTP verified. You can now reset your password.
-                email: jane@example.com
+                data:
+                  email: jane@example.com
+                  resetToken: eyJhbGciOiJIUzI1NiIs...
         '400':
           $ref: '#/components/responses/ValidationError'
 
@@ -205,7 +207,9 @@ paths:
     post:
       tags: [Auth]
       summary: Reset password
-      description: Sets a new password after successfully verifying the reset OTP.
+      description: >
+        Sets a new password. Requires the resetToken returned by verify-reset-otp
+        (valid 10 minutes, single use). Signs the user out everywhere.
       requestBody:
         required: true
         content:
@@ -220,9 +224,7 @@ paths:
               example:
                 message: Password reset successfully. Please login with your new password.
         '400':
-          $ref: '#/components/responses/ValidationError'
-        '404':
-          $ref: '#/components/responses/NotFoundError'
+          description: Validation error, or INVALID_RESET_TOKEN when the token is invalid, expired or already used
 
   /api/v1/auth/logout:
     post:
@@ -371,9 +373,9 @@ components:
 
     ResetPasswordRequest:
       type: object
-      required: [email, newPassword, confirmPassword]
+      required: [resetToken, newPassword, confirmPassword]
       properties:
-        email:           { type: string, format: email }
+        resetToken:      { type: string, description: From verify-reset-otp }
         newPassword:     { type: string, minLength: 8 }
         confirmPassword: { type: string }
 

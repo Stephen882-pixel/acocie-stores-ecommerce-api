@@ -142,8 +142,8 @@ describe('Auth routes', () => {
             [
                 '/reset-password',
                 'resetPassword',
-                { email: 'a@b.com', newPassword: 'Passw0rd', confirmPassword: 'Passw0rd' },
-                { email: 'a@b.com', newPassword: 'Passw0rd', confirmPassword: 'Passw0rd' }
+                { resetToken: 'r-token', newPassword: 'Passw0rd', confirmPassword: 'Passw0rd' },
+                { resetToken: 'r-token', newPassword: 'Passw0rd', confirmPassword: 'Passw0rd' }
             ]
         ])('POST %s calls authService.%s', async (path, method, body, expectedArg) => {
             authService[method].mockResolvedValue({ message: 'ok' });
@@ -159,7 +159,8 @@ describe('Auth routes', () => {
             ['/refresh-token', {}],
             ['/forgot-password', { email: 'nope' }],
             ['/resend-otp', { email: 'a@b.com', purpose: 'login' }],
-            ['/reset-password', { email: 'a@b.com', newPassword: 'Passw0rd', confirmPassword: 'other' }]
+            ['/reset-password', { resetToken: 'r-token', newPassword: 'Passw0rd', confirmPassword: 'other' }],
+            ['/reset-password', { email: 'a@b.com', newPassword: 'Passw0rd', confirmPassword: 'Passw0rd' }]
         ])('POST %s returns 400 on invalid input', async (path, body) => {
             const res = await request(app).post(`/api/v1/auth${path}`).send(body);
 

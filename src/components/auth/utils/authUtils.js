@@ -50,6 +50,28 @@ const verifyRefreshToken = (token) => {
 };
 
 
+// Password-reset tokens are signed with the user's current password hash
+// mixed into the secret: once the password changes, the token stops verifying,
+// so each one works once. They never verify as access tokens.
+const resetSecret = (passwordHash) => `${process.env.JWT_SECRET}:password_reset:${passwordHash}`;
+
+const generateResetToken = (userId, passwordHash) => {
+    return jwt.sign(
+        { userId, purpose: 'password_reset' },
+        resetSecret(passwordHash),
+        { expiresIn: '10m' }
+    );
+};
+
+const verifyResetToken = (token, passwordHash) => {
+    try {
+        const decoded = jwt.verify(token, resetSecret(passwordHash));
+        return decoded.purpose === 'password_reset' ? decoded : null;
+    } catch (error) {
+        return null;
+    }
+};
+
 const getTokenExpiry = (expiryString) => {
     const unit = expiryString.slice(-1);
     const value = parseInt(expiryString.slice(0,-1));
@@ -90,6 +112,8 @@ module.exports = {
   generateRefreshToken,
   verifyAccessToken,
   verifyRefreshToken,
+  generateResetToken,
+  verifyResetToken,
   getTokenExpiry,
   isValidEmail,
   isStrongPassword,

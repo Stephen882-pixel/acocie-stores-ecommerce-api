@@ -440,9 +440,10 @@ describe('authService', () => {
     });
 
     describe('verifyResetOTP', () => {
-        it('marks a valid password_reset OTP as used', async () => {
+        it('marks a valid password_reset OTP as used and returns a reset token', async () => {
             const otp = { update: jest.fn().mockResolvedValue() };
             OTPCode.findOne.mockResolvedValue(otp);
+            User.findOne.mockResolvedValue(makeUser());
 
             const result = await authService.verifyResetOTP({ email: 'jane@example.com', otpCode: '654321' });
 
@@ -451,6 +452,7 @@ describe('authService', () => {
             });
             expect(otp.update).toHaveBeenCalledWith({ isUsed: true });
             expect(result.email).toBe('jane@example.com');
+            expect(authUtils.verifyResetToken(result.resetToken, 'hashed')).toMatchObject({ userId: 'user-1' });
         });
 
         it('rejects an invalid or expired OTP', async () => {
@@ -472,7 +474,9 @@ describe('authService', () => {
     });
 
     describe('resetPassword', () => {
-        const input = { email: 'jane@example.com', newPassword: STRONG_PASSWORD, confirmPassword: STRONG_PASSWORD };
+        const INVALID = 'This reset link is invalid or has expired. Request a new code.';
+        const passwords = { newPassword: STRONG_PASSWORD, confirmPassword: STRONG_PASSWORD };
+        const validToken = () => authUtils.generateResetToken('user-1', 'hashed');
 
         beforeEach(() => {
             RefreshToken.destroy.mockResolvedValue(1);
@@ -481,17 +485,42 @@ describe('authService', () => {
 
         it('updates the hash and revokes all refresh tokens for the user', async () => {
             const user = makeUser();
-            User.findOne.mockResolvedValue(user);
+            User.findByPk.mockResolvedValue(user);
 
-            await authService.resetPassword(input);
+            await authService.resetPassword({ resetToken: validToken(), ...passwords });
 
+            expect(User.findByPk).toHaveBeenCalledWith('user-1');
             expect(user.update).toHaveBeenCalledWith({ passwordHash: 'new-hash' });
             expect(RefreshToken.destroy).toHaveBeenCalledWith({ where: { userId: 'user-1' } });
         });
 
+        it('rejects a request without a reset token (email alone is not enough)', async () => {
+            await expectServiceError(
+                authService.resetPassword({ email: 'jane@example.com', ...passwords }),
+                'All fields are required',
+                400
+            );
+        });
+
+        it('rejects a token used once already (the password hash has changed)', async () => {
+            const user = makeUser({ passwordHash: 'hash-after-first-reset' });
+            User.findByPk.mockResolvedValue(user);
+
+            await expectServiceError(authService.resetPassword({ resetToken: validToken(), ...passwords }), INVALID, 400);
+            expect(user.update).not.toHaveBeenCalled();
+        });
+
+        it.each([
+            ['garbage', 'not-a-jwt'],
+            ['an access token', authUtils.generateAccessToken('user-1', 'jane@example.com', 'customer')]
+        ])('rejects %s as a reset token', async (_label, resetToken) => {
+            User.findByPk.mockResolvedValue(makeUser());
+            await expectServiceError(authService.resetPassword({ resetToken, ...passwords }), INVALID, 400);
+        });
+
         it('rejects mismatched passwords', async () => {
             await expectServiceError(
-                authService.resetPassword({ ...input, confirmPassword: 'Different1' }),
+                authService.resetPassword({ resetToken: validToken(), ...passwords, confirmPassword: 'Different1' }),
                 'Passwords do not match',
                 400
             );
@@ -499,15 +528,10 @@ describe('authService', () => {
 
         it('rejects a weak password', async () => {
             await expectServiceError(
-                authService.resetPassword({ ...input, newPassword: 'weak', confirmPassword: 'weak' }),
+                authService.resetPassword({ resetToken: validToken(), newPassword: 'weak', confirmPassword: 'weak' }),
                 expect.stringMatching(/at least 8 characters/),
                 400
             );
-        });
-
-        it('rejects an unknown user', async () => {
-            User.findOne.mockResolvedValue(null);
-            await expectServiceError(authService.resetPassword(input), 'User not found', 404);
         });
     });
 

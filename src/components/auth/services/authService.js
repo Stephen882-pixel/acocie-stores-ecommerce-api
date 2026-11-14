@@ -2,6 +2,7 @@ const { User, OTPCode, RefreshToken, LoginHistory } = require('../../../models')
 const authUtils = require('../utils/authUtils');
 const emailService = require('./emailService');
 const { Op } = require('sequelize');
+const jwt = require('jsonwebtoken');
 const { sequelize } = require('../../../config/database');
 
 const { createError } = require('../../../helpers/error.helper');
@@ -273,13 +274,26 @@ const verifyResetOTP = async ({ email, otpCode }) => {
         throw createError('Invalid or expired OTP code', 400);
     }
 
+    const user = await User.findOne({ where: { email } });
+    if (!user) {
+        throw createError('Invalid or expired OTP code', 400);
+    }
+
     await otp.update({ isUsed: true });
 
-    return { message: 'OTP verified. You can now reset your password.', email };
+    return {
+        message: 'OTP verified. You can now reset your password.',
+        email,
+        // Proof that this OTP was verified; reset-password requires it.
+        resetToken: authUtils.generateResetToken(user.id, user.passwordHash)
+    };
 };
 
-const resetPassword = async ({ email, newPassword, confirmPassword }) => {
-    if (!email || !newPassword || !confirmPassword) {
+const INVALID_RESET_TOKEN = () =>
+    createError('This reset link is invalid or has expired. Request a new code.', 400, { code: 'INVALID_RESET_TOKEN' });
+
+const resetPassword = async ({ resetToken, newPassword, confirmPassword }) => {
+    if (!resetToken || !newPassword || !confirmPassword) {
         throw createError('All fields are required', 400);
     }
 
@@ -291,9 +305,12 @@ const resetPassword = async ({ email, newPassword, confirmPassword }) => {
         throw createError('Password must be at least 8 characters with uppercase, lowercase, and number', 400);
     }
 
-    const user = await User.findOne({ where: { email } });
-    if (!user) {
-        throw createError('User not found', 404);
+    // Decode only to find whose token it is; verifyResetToken does the real check.
+    const claimedUserId = jwt.decode(resetToken)?.userId;
+    const user = claimedUserId ? await User.findByPk(claimedUserId) : null;
+
+    if (!user || !authUtils.verifyResetToken(resetToken, user.passwordHash)) {
+        throw INVALID_RESET_TOKEN();
     }
 
     const newPasswordHash = await authUtils.hashPassword(newPassword);

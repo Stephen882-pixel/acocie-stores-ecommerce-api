@@ -96,7 +96,7 @@ const verifyResetOTP = Joi.object({
 });
 
 const resetPassword = Joi.object({
-    email,
+    resetToken: Joi.string().required().label('Reset token'),   // from verify-reset-otp
     newPassword: password.label('New password'),
     confirmPassword: Joi.string()
         .valid(Joi.ref('newPassword'))
