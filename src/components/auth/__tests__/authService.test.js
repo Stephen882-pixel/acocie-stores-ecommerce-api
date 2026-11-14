@@ -1,6 +1,6 @@
 jest.mock('../../../models', () => ({
     User: { findOne: jest.fn(), findByPk: jest.fn(), create: jest.fn() },
-    OTPCode: { findOne: jest.fn(), create: jest.fn() },
+    OTPCode: { findOne: jest.fn(), create: jest.fn(), update: jest.fn() },
     RefreshToken: { findOne: jest.fn(), create: jest.fn(), destroy: jest.fn() },
     LoginHistory: { create: jest.fn() }
 }));
@@ -371,6 +371,71 @@ describe('authService', () => {
 
         it('rejects a missing email', async () => {
             await expectServiceError(authService.forgotPassword(''), 'Email is required', 400);
+        });
+    });
+
+    describe('resendOTP', () => {
+        const GENERIC = { message: 'If the account exists, a new code has been sent' };
+        const secondsAgo = (s) => new Date(Date.now() - s * 1000);
+
+        beforeEach(() => {
+            OTPCode.findOne.mockResolvedValue(null);
+            OTPCode.update.mockResolvedValue([1]);
+            OTPCode.create.mockResolvedValue({});
+            emailService.sendSignUpOTP.mockResolvedValue(true);
+            emailService.sendPasswordResetOTP.mockResolvedValue(true);
+            jest.spyOn(authUtils, 'generateOTP').mockReturnValue('111222');
+        });
+
+        it('invalidates old signup codes, creates a new one and emails it', async () => {
+            User.findOne.mockResolvedValue(makeUser({ isVerified: false }));
+            OTPCode.findOne.mockResolvedValue({ createdAt: secondsAgo(120) });
+
+            const result = await authService.resendOTP({ email: 'jane@example.com', purpose: 'signup' });
+
+            expect(result).toEqual(GENERIC);
+            expect(OTPCode.update).toHaveBeenCalledWith(
+                { isUsed: true },
+                { where: { email: 'jane@example.com', purpose: 'signup', isUsed: false } }
+            );
+            expect(OTPCode.create).toHaveBeenCalledWith(expect.objectContaining({
+                userId: 'user-1', otpCode: '111222', purpose: 'signup'
+            }));
+            expect(emailService.sendSignUpOTP).toHaveBeenCalledWith('jane@example.com', 'Jane', '111222');
+        });
+
+        it('sends a password reset code with the reset email', async () => {
+            User.findOne.mockResolvedValue(makeUser());
+
+            await authService.resendOTP({ email: 'jane@example.com', purpose: 'password_reset' });
+
+            expect(emailService.sendPasswordResetOTP).toHaveBeenCalledWith('jane@example.com', 'Jane', '111222');
+            expect(emailService.sendSignUpOTP).not.toHaveBeenCalled();
+        });
+
+        it.each([
+            ['an unknown email', null, 'signup'],
+            ['an already verified account', makeUser({ isVerified: true }), 'signup']
+        ])('sends nothing for %s but returns the same message', async (_label, user, purpose) => {
+            User.findOne.mockResolvedValue(user);
+
+            const result = await authService.resendOTP({ email: 'jane@example.com', purpose });
+
+            expect(result).toEqual(GENERIC);
+            expect(OTPCode.create).not.toHaveBeenCalled();
+            expect(emailService.sendSignUpOTP).not.toHaveBeenCalled();
+        });
+
+        it('rejects a second request within 60 seconds with 429 and retryAfter', async () => {
+            User.findOne.mockResolvedValue(makeUser({ isVerified: false }));
+            OTPCode.findOne.mockResolvedValue({ createdAt: secondsAgo(20) });
+
+            const error = await authService.resendOTP({ email: 'jane@example.com', purpose: 'signup' }).catch((e) => e);
+
+            expect(error).toMatchObject({ statusCode: 429, code: 'OTP_RESEND_TOO_SOON' });
+            expect(error.details.retryAfter).toBeGreaterThan(0);
+            expect(error.details.retryAfter).toBeLessThanOrEqual(40);
+            expect(OTPCode.create).not.toHaveBeenCalled();
         });
     });
 

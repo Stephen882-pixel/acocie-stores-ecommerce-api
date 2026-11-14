@@ -199,8 +199,11 @@ EMAIL_USER=your_email@gmail.com
 EMAIL_PASSWORD=your_app_password
 EMAIL_FROM="Acocie Stores <noreply@acocie.com>"
 
-# Frontend URL (for CORS)
+# Frontend URL (email links; CORS fallback)
 FRONTEND_URL=http://localhost:3001
+
+# Origins allowed by CORS, comma-separated (seller dashboard, buyer PWA)
+CORS_ORIGINS=http://localhost:3001,http://localhost:5180
 
 # OTP Configuration
 OTP_EXPIRY_MINUTES=10

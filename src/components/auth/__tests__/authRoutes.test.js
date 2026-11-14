@@ -137,6 +137,7 @@ describe('Auth routes', () => {
             ['/verify-otp', 'verifyOTP', { email: 'a@b.com', otpCode: '123456' }, { email: 'a@b.com', otpCode: '123456' }],
             ['/refresh-token', 'refreshToken', { refreshToken: 'r-token' }, 'r-token'],
             ['/forgot-password', 'forgotPassword', { email: 'a@b.com' }, 'a@b.com'],
+            ['/resend-otp', 'resendOTP', { email: 'a@b.com', purpose: 'signup' }, { email: 'a@b.com', purpose: 'signup' }],
             ['/verify-reset-otp', 'verifyResetOTP', { email: 'a@b.com', otpCode: '123456' }, { email: 'a@b.com', otpCode: '123456' }],
             [
                 '/reset-password',
@@ -157,6 +158,7 @@ describe('Auth routes', () => {
             ['/verify-otp', { email: 'a@b.com', otpCode: '12' }],
             ['/refresh-token', {}],
             ['/forgot-password', { email: 'nope' }],
+            ['/resend-otp', { email: 'a@b.com', purpose: 'login' }],
             ['/reset-password', { email: 'a@b.com', newPassword: 'Passw0rd', confirmPassword: 'other' }]
         ])('POST %s returns 400 on invalid input', async (path, body) => {
             const res = await request(app).post(`/api/v1/auth${path}`).send(body);

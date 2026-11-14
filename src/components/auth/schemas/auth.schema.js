@@ -84,6 +84,12 @@ const forgotPassword = Joi.object({
 });
 
 
+const resendOTP = Joi.object({
+    email,
+    purpose: Joi.string().valid('signup', 'password_reset').required().label('Purpose')
+});
+
+
 const verifyResetOTP = Joi.object({
     email,
     otpCode
@@ -118,6 +124,7 @@ module.exports = {
     refreshToken,
     logout,
     forgotPassword,
+    resendOTP,
     verifyResetOTP,
     resetPassword,
     changePassword

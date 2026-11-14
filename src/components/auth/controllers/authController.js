@@ -35,6 +35,11 @@ const forgotPassword = async (req, res) => {
     return sendSuccess(res, null, { message });
 };
 
+const resendOTP = async (req, res) => {
+    const { message } = await authService.resendOTP(req.body);
+    return sendSuccess(res, null, { message });
+};
+
 const verifyResetOTP = async (req, res) => {
     const { message, ...data } = await authService.verifyResetOTP(req.body);
     return sendSuccess(res, data, { message });
@@ -60,6 +65,7 @@ module.exports = {
     refreshToken,
     logout,
     forgotPassword,
+    resendOTP,
     verifyResetOTP,
     resetPassword,
     changePassword

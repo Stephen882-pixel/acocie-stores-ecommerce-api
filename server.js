@@ -41,8 +41,15 @@ app.use('/api-docs', (req, res, next) => {
 }, apiReference({ spec: { content: openApiSpec }, theme: 'purple' }));
 
 
+// CORS_ORIGINS is a comma-separated list (buyer PWA, seller dashboard, ...).
+// Falls back to FRONTEND_URL so existing deployments keep working.
+const allowedOrigins = (process.env.CORS_ORIGINS || process.env.FRONTEND_URL || 'http://localhost:5173')
+    .split(',')
+    .map((origin) => origin.trim())
+    .filter(Boolean);
+
 app.use(cors({
-    origin: process.env.FRONTEND_URL || 'http://localhost:5173',
+    origin: allowedOrigins,
     credentials:true
 }));
 

@@ -199,6 +199,60 @@ const forgotPassword = async (email) => {
     return { message: 'If email exists, an OTP has been sent' };
 };
 
+const RESEND_OTP_COOLDOWN_SECONDS = 60;
+
+const sendOTPEmail = {
+    signup: emailService.sendSignUpOTP,
+    password_reset: emailService.sendPasswordResetOTP
+};
+
+/**
+ * Sends a fresh OTP for a signup or password reset that is still in progress.
+ * Earlier unused codes for the same purpose stop working. The response is the
+ * same whether or not the account exists, to prevent email enumeration.
+ */
+const resendOTP = async ({ email, purpose }) => {
+    const message = 'If the account exists, a new code has been sent';
+
+    const user = await User.findOne({ where: { email } });
+
+    // A signup code only makes sense for an account still waiting on verification.
+    if (!user || (purpose === 'signup' && user.isVerified)) {
+        return { message };
+    }
+
+    const latest = await OTPCode.findOne({
+        where: { email, purpose },
+        order: [['createdAt', 'DESC']]
+    });
+
+    if (latest) {
+        const secondsSinceLast = (Date.now() - new Date(latest.createdAt).getTime()) / 1000;
+        if (secondsSinceLast < RESEND_OTP_COOLDOWN_SECONDS) {
+            const retryAfter = Math.ceil(RESEND_OTP_COOLDOWN_SECONDS - secondsSinceLast);
+            throw createError(`Please wait ${retryAfter}s before requesting another code`, 429, {
+                code: 'OTP_RESEND_TOO_SOON',
+                details: { retryAfter }
+            });
+        }
+    }
+
+    await OTPCode.update({ isUsed: true }, { where: { email, purpose, isUsed: false } });
+
+    const otpCode = authUtils.generateOTP();
+    await OTPCode.create({
+        userId: user.id,
+        email,
+        otpCode,
+        purpose,
+        expiresAt: authUtils.getOTPExpiry()
+    });
+
+    await sendOTPEmail[purpose](email, user.firstName, otpCode);
+
+    return { message };
+};
+
 const verifyResetOTP = async ({ email, otpCode }) => {
     if (!email || !otpCode) {
         throw createError('Email and OTP Code are required', 400);
@@ -286,6 +340,7 @@ module.exports = {
     refreshToken,
     logout,
     forgotPassword,
+    resendOTP,
     verifyResetOTP,
     resetPassword,
     changePassword

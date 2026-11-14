@@ -132,6 +132,53 @@ paths:
         '400':
           $ref: '#/components/responses/ValidationError'
 
+  /api/v1/auth/resend-otp:
+    post:
+      tags: [Auth]
+      summary: Resend an OTP
+      description: >
+        Sends a new signup or password-reset OTP and invalidates earlier unused codes for that purpose.
+        A signup code is only sent while the account is unverified. Always returns the same message
+        to prevent email enumeration. One request per email and purpose every 60 seconds.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, purpose]
+              properties:
+                email:
+                  type: string
+                  format: email
+                purpose:
+                  type: string
+                  enum: [signup, password_reset]
+            example:
+              email: jane@example.com
+              purpose: signup
+      responses:
+        '200':
+          description: New OTP sent if the account exists
+          content:
+            application/json:
+              example:
+                message: If the account exists, a new code has been sent
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '429':
+          description: Requested again within 60 seconds
+          content:
+            application/json:
+              example:
+                success: false
+                error:
+                  statusCode: 429
+                  code: OTP_RESEND_TOO_SOON
+                  message: Please wait 42s before requesting another code
+                  details:
+                    retryAfter: 42
+
   /api/v1/auth/verify-reset-otp:
     post:
       tags: [Auth]
