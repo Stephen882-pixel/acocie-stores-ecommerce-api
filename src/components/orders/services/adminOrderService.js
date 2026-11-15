@@ -157,12 +157,12 @@ const updateOrderStatus = async (id, adminId, { status, reason }) => {
 
         if (status === 'cancelled') {
             await restock(order.items, transaction);
-            order.cancelled_at = new Date();
+            order.cancelledAt = new Date();
         }
 
-        if (status === 'confirmed' && oldStatus === 'pending') order.confirmed_at = new Date();
-        if (status === 'shipped' && oldStatus !== 'shipped') order.shipped_at = new Date();
-        if (status === 'delivered' && oldStatus !== 'delivered') order.delivered_at = new Date();
+        if (status === 'confirmed' && oldStatus === 'pending') order.confirmedAt = new Date();
+        if (status === 'shipped' && oldStatus !== 'shipped') order.shippedAt = new Date();
+        if (status === 'delivered' && oldStatus !== 'delivered') order.deliveredAt = new Date();
 
         await order.update({ status }, { transaction });
         await recordStatusChange(id, oldStatus, status, adminId, reason || 'Admin update', transaction);
@@ -198,7 +198,7 @@ const confirmOrder = async (id, adminId, paymentReference) => {
             status: 'confirmed',
             paymentStatus: 'paid',
             paymentReference,
-            confirmed_at: new Date()
+            confirmedAt: new Date()
         }, { transaction });
 
         await recordStatusChange(id, oldStatus, 'confirmed', adminId, 'Payment verified by admin', transaction);
@@ -279,7 +279,7 @@ const processCancellation = async (id, adminId, { action, adminNotes }) => {
             await restock(order.items, transaction);
 
             const oldStatus = order.status;
-            await order.update({ status: 'cancelled', cancelled_at: new Date() }, { transaction });
+            await order.update({ status: 'cancelled', cancelledAt: new Date() }, { transaction });
             await recordStatusChange(
                 order.id, oldStatus, 'cancelled', adminId,
                 `Cancellation approved: ${cancellation.reason}`, transaction
@@ -290,7 +290,7 @@ const processCancellation = async (id, adminId, { action, adminNotes }) => {
                 status: 'approved',
                 processedByUserId: adminId,
                 adminNotes,
-                processed_at: new Date(),
+                processedAt: new Date(),
                 refundAmount: order.paymentStatus === 'paid' ? order.totalAmount : 0,
                 refundMethod: 'original_payment'
             }, { transaction });
@@ -305,7 +305,7 @@ const processCancellation = async (id, adminId, { action, adminNotes }) => {
                 status: 'rejected',
                 processedByUserId: adminId,
                 adminNotes,
-                processed_at: new Date()
+                processedAt: new Date()
             }, { transaction });
 
             await transaction.commit();
@@ -354,14 +354,14 @@ const processReturn = async (id, adminId, { action, adminNotes, refundAmount }) 
             adminNotes,
             refundAmount: refundAmount || returnRequest.order.totalAmount,
             refundMethod: 'original_payment',
-            processed_at: new Date()
+            processedAt: new Date()
         });
     } else {
         await returnRequest.update({
             status: 'rejected',
             processedByUserId: adminId,
             adminNotes,
-            processed_at: new Date()
+            processedAt: new Date()
         });
     }
 

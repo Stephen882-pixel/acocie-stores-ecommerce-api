@@ -73,6 +73,19 @@ describe('order status changes', () => {
         expect(eventService.record).toHaveBeenCalledWith(tx, expect.objectContaining(statusEvent('pending', 'confirmed')));
     });
 
+    it('admin confirms: saves when, under the model attribute name (not the column name)', async () => {
+        const order = makeOrder('pending');
+        Order.findByPk.mockResolvedValue(order);
+
+        await adminOrderService.confirmOrder('order-1', 'admin-1', 'REF-1');
+
+        // Sequelize silently ignores unknown keys such as `confirmed_at`.
+        expect(order.update).toHaveBeenCalledWith(
+            expect.objectContaining({ status: 'confirmed', confirmedAt: expect.any(Date) }),
+            { transaction: tx }
+        );
+    });
+
     describe('approving a cancellation', () => {
         const items = [
             { productId: 'p1', variantId: null, quantity: 2 },
