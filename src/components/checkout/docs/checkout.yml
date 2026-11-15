@@ -67,8 +67,11 @@ paths:
       tags: [Checkout]
       summary: Place order
       description: |
-        Creates the order from the current cart. Requires a shipping address.  
-        On success, the cart is cleared and an order confirmation email is sent.
+        Places the cart as one order per seller, so each seller accepts, ships and
+        delivers their own order. Each order has its own number and delivery fee.
+        Stock is checked again and deducted in the same transaction; on any failure
+        nothing changes. On success the cart is cleared and a confirmation email is
+        sent for each order.
       security:
         - bearerAuth: []
       requestBody:
@@ -137,7 +140,17 @@ components:
     PlaceOrderResponse:
       type: object
       properties:
-        message:     { type: string }
-        orderNumber: { type: string, example: ORD-20260508-00042 }
-        orderId:     { type: string, format: uuid }
-        totalAmount: { type: string }
+        message: { type: string, example: 2 orders placed, one per seller }
+        data:
+          type: object
+          properties:
+            orders:
+              type: array
+              description: One per seller, oldest first.
+              items:
+                type: object
+                properties:
+                  id:          { type: string, format: uuid }
+                  orderNumber: { type: string, example: ORD-202611-00042 }
+                  totalAmount: { type: string, example: "104408.84" }
+                  status:      { type: string, example: pending }

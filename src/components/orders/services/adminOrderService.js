@@ -9,13 +9,13 @@ const {
     Address,
     Product,
     Inventory,
+    ProductVariant,
     User,
     sequelize
 } = require('../../../models');
 const { Op } = require('sequelize');
 const emailService = require('../../auth/services/emailService');
-const eventService = require('../../events/services/eventService');
-const { EVENTS, LEVELS } = require('../../events/constants/events');
+const { recordStatusChanged } = require('./orderEvents');
 
 const { createError } = require('../../../helpers/error.helper');
 const { paginate } = require('../../../helpers/response.helper');
@@ -28,6 +28,27 @@ const recordStatusChange = async (orderId, oldStatus, newStatus, userId, reason 
         changedByUserId: userId,
         changeReason: reason
     }, transaction ? { transaction } : {});
+};
+
+/**
+ * Puts back the stock a cancelled order took: checkoutService.placeOrder
+ * deducts available and total stock, and the variant's own stock.
+ */
+const restock = async (items, transaction) => {
+    for (const item of items) {
+        const inventory = await Inventory.findOne({ where: { productId: item.productId }, transaction });
+        if (inventory) {
+            await inventory.update({
+                availableStock: inventory.availableStock + item.quantity,
+                totalStock: inventory.totalStock + item.quantity
+            }, { transaction });
+        }
+        if (item.variantId) {
+            await ProductVariant.increment('stockQuantity', {
+                by: item.quantity, where: { id: item.variantId }, transaction
+            });
+        }
+    }
 };
 
 const getAllOrders = async ({
@@ -135,15 +156,7 @@ const updateOrderStatus = async (id, adminId, { status, reason }) => {
         const oldStatus = order.status;
 
         if (status === 'cancelled') {
-            for (const item of order.items) {
-                const inventory = await Inventory.findOne({ where: { productId: item.productId }, transaction });
-                if (inventory) {
-                    await inventory.update({
-                        reservedStock: inventory.reservedStock - item.quantity,
-                        availableStock: inventory.availableStock + item.quantity
-                    }, { transaction });
-                }
-            }
+            await restock(order.items, transaction);
             order.cancelled_at = new Date();
         }
 
@@ -153,13 +166,7 @@ const updateOrderStatus = async (id, adminId, { status, reason }) => {
 
         await order.update({ status }, { transaction });
         await recordStatusChange(id, oldStatus, status, adminId, reason || 'Admin update', transaction);
-        await eventService.record(transaction, {
-            event: EVENTS.ORDER_STATUS_CHANGED,
-            feature: 'orders',
-            level: LEVELS.STANDARD,
-            to: { userIds: [order.userId] },
-            data: { orderId: order.id, orderNumber: order.orderNumber, from: oldStatus, to: status }
-        });
+        await recordStatusChanged(transaction, order, oldStatus, status);
         await transaction.commit();
 
         emailService.sendOrderStatusUpdateNotification(order.user.email, order.user.firstName, status)
@@ -186,14 +193,17 @@ const confirmOrder = async (id, adminId, paymentReference) => {
     }
 
     const oldStatus = order.status;
-    await order.update({
-        status: 'confirmed',
-        paymentStatus: 'paid',
-        paymentReference,
-        confirmed_at: new Date()
-    });
+    await sequelize.transaction(async (transaction) => {
+        await order.update({
+            status: 'confirmed',
+            paymentStatus: 'paid',
+            paymentReference,
+            confirmed_at: new Date()
+        }, { transaction });
 
-    await recordStatusChange(id, oldStatus, 'confirmed', adminId, 'Payment verified by admin');
+        await recordStatusChange(id, oldStatus, 'confirmed', adminId, 'Payment verified by admin', transaction);
+        await recordStatusChanged(transaction, order, oldStatus, 'confirmed');
+    });
 
     emailService.sendOrderConfirmedNotification(
         order.user.email,
@@ -245,7 +255,8 @@ const processCancellation = async (id, adminId, { action, adminNotes }) => {
                     model: Order,
                     as: 'order',
                     include: [
-                        { model: OrderItem, as: 'items', include: [{ model: Product, as: 'product' }] }
+                        { model: OrderItem, as: 'items', include: [{ model: Product, as: 'product' }] },
+                        { model: User, as: 'user' }
                     ]
                 }
             ],
@@ -265,15 +276,7 @@ const processCancellation = async (id, adminId, { action, adminNotes }) => {
         if (action === 'approve') {
             const order = cancellation.order;
 
-            for (const item of order.items) {
-                const inventory = await Inventory.findOne({ where: { productId: item.productId }, transaction });
-                if (inventory) {
-                    await inventory.update({
-                        reservedStock: inventory.reservedStock - item.quantity,
-                        availableStock: inventory.availableStock + item.quantity
-                    }, { transaction });
-                }
-            }
+            await restock(order.items, transaction);
 
             const oldStatus = order.status;
             await order.update({ status: 'cancelled', cancelled_at: new Date() }, { transaction });
@@ -281,6 +284,7 @@ const processCancellation = async (id, adminId, { action, adminNotes }) => {
                 order.id, oldStatus, 'cancelled', adminId,
                 `Cancellation approved: ${cancellation.reason}`, transaction
             );
+            await recordStatusChanged(transaction, order, oldStatus, 'cancelled');
 
             await cancellation.update({
                 status: 'approved',
@@ -403,6 +407,7 @@ const processRefund = async (id, adminId, { refundAmount, refundMethod = 'origin
         }, { transaction });
 
         await recordStatusChange(id, oldStatus, 'refunded', adminId, `Refund processed: ${amount}`, transaction);
+        await recordStatusChanged(transaction, order, oldStatus, 'refunded');
         await transaction.commit();
 
         emailService.sendRefundProcessedNotification(

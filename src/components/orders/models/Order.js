@@ -173,7 +173,9 @@ module.exports = (sequelize) => {
   };
 
 
-  Order.generateOrderNumber = async () => {
+  // Pass the transaction when creating several orders in one: the count must
+  // see the ones already created, or two orders get the same number.
+  Order.generateOrderNumber = async (transaction) => {
     const date = new Date();
     const year = date.getFullYear();
     const month = String(date.getMonth() + 1).padStart(2, '0');
@@ -183,7 +185,8 @@ module.exports = (sequelize) => {
         created_at: {
           [sequelize.Sequelize.Op.gte]: new Date(year, date.getMonth(), 1)
         }
-      }
+      },
+      transaction
     });
     
     const orderNum = String(count + 1).padStart(5, '0');

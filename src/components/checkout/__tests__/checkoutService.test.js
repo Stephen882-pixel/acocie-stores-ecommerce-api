@@ -5,7 +5,7 @@
 jest.mock('../../../models', () => ({
     Cart: { findOne: jest.fn() },
     CartItem: { destroy: jest.fn() },
-    Order: { create: jest.fn(), findByPk: jest.fn(), generateOrderNumber: jest.fn() },
+    Order: { create: jest.fn(), findAll: jest.fn(), generateOrderNumber: jest.fn() },
     OrderItem: { create: jest.fn() },
     Product: {},
     ProductVariant: {},
@@ -69,9 +69,11 @@ describe('checkoutService', () => {
         tx = makeTransaction();
         sequelize.transaction.mockResolvedValue(tx);
         Address.findOne.mockResolvedValue({ id: 'addr-1' });
-        Order.generateOrderNumber.mockResolvedValue('ORD-202611-00001');
-        Order.create.mockImplementation(async (data) => ({ id: 'order-1', ...data }));
-        Order.findByPk.mockResolvedValue({ id: 'order-1', orderNumber: 'ORD-202611-00001' });
+        let orderCount = 0;
+        Order.generateOrderNumber.mockImplementation(async () => `ORD-202611-0000${++orderCount}`);
+        Order.create.mockImplementation(async (data) => ({ id: `order-${orderCount}`, ...data }));
+        Order.findAll.mockImplementation(async ({ where }) => where.id.map((id) => ({ id })));
+        Address.findAll.mockResolvedValue([]);
         User.findByPk.mockResolvedValue({ email: 'jane@example.com', firstName: 'Jane' });
     });
 
@@ -100,6 +102,22 @@ describe('checkoutService', () => {
         it('rejects an empty cart', async () => {
             Cart.findOne.mockResolvedValue(cartWith());
             await expect(checkoutService.initiateCheckout('user-1')).rejects.toMatchObject({ message: 'Cart is empty', statusCode: 400 });
+        });
+    });
+
+    describe('getCheckoutSummary', () => {
+        it('prices the cart as the per-seller orders it will become', async () => {
+            Cart.findOne.mockResolvedValue(cartWith(plainItem(), variantItem()));
+
+            const summary = await checkoutService.getCheckoutSummary('user-1');
+
+            expect(summary).toMatchObject({
+                sellerCount: 2,
+                subtotal: '700.00',
+                taxAmount: '112.00',
+                shippingCost: '20.00',
+                totalAmount: '832.00'
+            });
         });
     });
 
@@ -140,6 +158,29 @@ describe('checkoutService', () => {
             expect(Order.create).not.toHaveBeenCalled();
             expect(item.product.inventory.update).not.toHaveBeenCalled();
             expect(tx.rollback).toHaveBeenCalled();
+        });
+
+        it('places one order per seller, each with its own number and delivery fee', async () => {
+            Cart.findOne.mockResolvedValue(cartWith(plainItem(), variantItem()));
+
+            const result = await checkoutService.placeOrder('user-1', { shippingAddressId: 'addr-1' });
+
+            expect(Order.create).toHaveBeenCalledTimes(2);
+            const [kettleOrder, phoneOrder] = Order.create.mock.calls.map(([data]) => data);
+            // Kettle: 2 × 100 + 16% VAT + 10 delivery. Phone: 1 × 500 + 16% VAT + 10.
+            expect(kettleOrder).toMatchObject({ orderNumber: 'ORD-202611-00001', subtotal: '200.00', shippingCost: '10.00', totalAmount: '242.00' });
+            expect(phoneOrder).toMatchObject({ orderNumber: 'ORD-202611-00002', subtotal: '500.00', shippingCost: '10.00', totalAmount: '590.00' });
+            // Order numbers are counted inside the transaction, so they cannot collide.
+            expect(Order.generateOrderNumber).toHaveBeenCalledWith(tx);
+            expect(result.orders).toHaveLength(2);
+        });
+
+        it('keeps a single-seller cart as one order', async () => {
+            Cart.findOne.mockResolvedValue(cartWith(plainItem(), plainItem({ productId: 'p3' })));
+
+            await checkoutService.placeOrder('user-1', { shippingAddressId: 'addr-1' });
+
+            expect(Order.create).toHaveBeenCalledTimes(1);
         });
 
         it("rejects an address that is not the user's", async () => {

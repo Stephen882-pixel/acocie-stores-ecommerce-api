@@ -14,8 +14,11 @@ const getCheckoutSummary = async (req, res) => {
 };
 
 const placeOrder = async (req, res) => {
-    const order = await checkoutService.placeOrder(req.user.userId, req.body);
-    return sendSuccess(res, order, { statusCode: 201, message: 'Order placed successfully' });
+    const result = await checkoutService.placeOrder(req.user.userId, req.body);
+    const message = result.orders.length > 1
+        ? `${result.orders.length} orders placed, one per seller`
+        : 'Order placed successfully';
+    return sendSuccess(res, result, { statusCode: 201, message });
 };
 
 module.exports = {

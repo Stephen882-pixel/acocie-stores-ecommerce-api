@@ -13,6 +13,7 @@ const {
 } = require('../../../models');
 const { Op } = require('sequelize');
 const emailService = require('../../auth/services/emailService');
+const { recordStatusChanged } = require('./orderEvents');
 
 const { createError } = require('../../../helpers/error.helper');
 const { paginate } = require('../../../helpers/response.helper');
@@ -102,8 +103,11 @@ const acceptOrder = async (id, vendorId) => {
     }
 
     const oldStatus = order.status;
-    await order.update({ status: 'processing' });
-    await recordStatusChange(id, oldStatus, 'processing', vendorId, 'Vendor accepted order');
+    await sequelize.transaction(async (transaction) => {
+        await order.update({ status: 'processing' }, { transaction });
+        await recordStatusChange(id, oldStatus, 'processing', vendorId, 'Vendor accepted order', transaction);
+        await recordStatusChanged(transaction, order, oldStatus, 'processing');
+    });
 
     emailService.sendOrderProcessingNotification(
         order.user.email,
@@ -160,6 +164,7 @@ const shipOrder = async (id, vendorId, { carrier, trackingNumber, trackingUrl, e
             `Shipped via ${carrier}, tracking: ${trackingNumber}`,
             transaction
         );
+        await recordStatusChanged(transaction, order, oldStatus, 'shipped');
 
         await transaction.commit();
 
@@ -196,10 +201,12 @@ const markAsDelivered = async (id, vendorId) => {
     }
 
     const oldStatus = order.status;
-    await order.update({ status: 'delivered', deliveredAt: new Date() });
-    await recordStatusChange(id, oldStatus, 'delivered', vendorId, 'Vendor confirmed delivery');
-
-    await OrderTracking.update({ trackingStatus: 'delivered' }, { where: { orderId: id } });
+    await sequelize.transaction(async (transaction) => {
+        await order.update({ status: 'delivered', deliveredAt: new Date() }, { transaction });
+        await recordStatusChange(id, oldStatus, 'delivered', vendorId, 'Vendor confirmed delivery', transaction);
+        await OrderTracking.update({ trackingStatus: 'delivered' }, { where: { orderId: id }, transaction });
+        await recordStatusChanged(transaction, order, oldStatus, 'delivered');
+    });
 
     emailService.sendOrderDeliveredNotification(
         order.user.email,
