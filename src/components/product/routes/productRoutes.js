@@ -6,6 +6,9 @@ const authenticate = require('../../auth/middleware/authMiddleware');
 const { requirePermission } = require('../../rbac/middleware/rbacMiddleware');
 const { PERMISSIONS: P } = require('../../rbac/constants/permissions');
 const { uploadProductImages, handleMulterError } = require('../../../helpers/multer.helper');
+const { requireUuidParam } = require('../../../middleware/uuidParam');
+
+router.param('id', requireUuidParam('Product not found'));
 
 router.get('/',        productController.getAllProducts);
 router.get('/search',  productController.searchProducts);

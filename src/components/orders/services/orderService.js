@@ -59,7 +59,7 @@ const getOrderById = async (id, userId) => {
                 as: 'items',
                 include: [
                     { model: Product, as: 'product', attributes: ['id', 'name', 'slug', 'status'] },
-                    { model: User, as: 'vendor', attributes: ['id', 'firstName', 'lastName', 'email'] }
+                    { model: User, as: 'vendor', attributes: ['id', 'firstName', 'lastName'] }
                 ]
             },
             { model: Address, as: 'shippingAddress' },

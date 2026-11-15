@@ -137,6 +137,11 @@ module.exports = (sequelize) => {
     }
   }, {
     tableName: 'products',
+    // costPrice is what the vendor paid: never send it to buyers or the public.
+    // Every query and include leaves it out; read it with Product.unscoped().
+    defaultScope: {
+      attributes: { exclude: ['costPrice'] }
+    },
     indexes: [
       { fields: ['vendor_id'] },
       { fields: ['category_id'] },

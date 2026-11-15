@@ -9,6 +9,12 @@ const notFound = (req, res) =>
  */
 // eslint-disable-next-line no-unused-vars
 const errorHandler = (err, req, res, next) => {
+    // Postgres 22P02, e.g. a malformed uuid in a route without router.param:
+    // the request was bad, not the server.
+    if (err.parent?.code === '22P02') {
+        return sendError(res, 400, 'Invalid identifier in the request', { code: 'INVALID_ID' });
+    }
+
     const statusCode = err.statusCode || err.status || 500;
 
     if (statusCode < 500) {

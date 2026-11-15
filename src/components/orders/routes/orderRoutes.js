@@ -1,4 +1,5 @@
 const express = require('express');
+const { requireUuidParam } = require('../../../middleware/uuidParam');
 const router = express.Router();
 const orderController = require('../controllers/orderController');
 const authenticate = require('../../auth/middleware/authMiddleware');
@@ -8,6 +9,7 @@ const validate = require('../../../middleware/validate');
 const orderSchema = require('../schemas/order.schema');
 
 router.use(authenticate);
+router.param('id', requireUuidParam('Order not found'));
 
 router.get('/',     requirePermission(P.ORDER_READ_OWN), validate(orderSchema.getOrderHistoryQuery, 'query'), orderController.getOrderHistory);
 router.get('/stats', requirePermission(P.ORDER_READ_OWN), orderController.getOrderStats);

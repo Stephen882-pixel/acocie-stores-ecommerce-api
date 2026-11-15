@@ -49,7 +49,7 @@ const getAllProducts = async ({
                 required: false,
                 limit: 1
             },
-            { model: User, as: 'vendor', attributes: ['id', 'firstName', 'lastName', 'email'] }
+            { model: User, as: 'vendor', attributes: ['id', 'firstName', 'lastName'] }
         ],
         limit: parseInt(limit),
         offset: parseInt(offset),
@@ -74,13 +74,15 @@ const getProductById = async (id, userRole) => {
             { model: ProductImage, as: 'images', order: [['displayOrder', 'ASC']] },
             { model: ProductVariant, as: 'variants', where: { isActive: true }, required: false },
             { model: Inventory, as: 'inventory' },
-            { model: User, as: 'vendor', attributes: ['id', 'firstName', 'lastName', 'email', 'role'] }
+            { model: User, as: 'vendor', attributes: ['id', 'firstName', 'lastName'] }
         ]
     });
 
     if (!product) throw createError('Product not found', 404);
 
-    await product.increment('viewCount');
+    // Static increment: the instance form reloads every column (RETURNING *),
+    // which would put costPrice back on the product we return.
+    await Product.increment('viewCount', { where: { id: product.id } });
     return product;
 };
 
@@ -191,7 +193,7 @@ const createProduct = async (fields, uploadedImages = [], uploadedVariantImages 
         }
     }
 
-    const completeProduct = await Product.findByPk(product.id, {
+    const completeProduct = await Product.unscoped().findByPk(product.id, {
         include: [
             { model: Category, as: 'category' },
             { model: ProductImage, as: 'images' },
@@ -258,7 +260,7 @@ const updateProduct = async (id, fields, uploadedImages = [], uploadedVariantIma
         }
     }
 
-    const updatedProduct = await Product.findByPk(id, {
+    const updatedProduct = await Product.unscoped().findByPk(id, {
         include: [
             { model: Category, as: 'category' },
             { model: ProductImage, as: 'images' },

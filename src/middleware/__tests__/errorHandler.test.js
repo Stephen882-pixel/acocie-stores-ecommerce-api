@@ -37,6 +37,20 @@ describe('response helpers', () => {
 });
 
 describe('errorHandler', () => {
+    it('answers 400, not 500, when Postgres rejects a malformed id (22P02)', async () => {
+        jest.spyOn(console, 'error').mockImplementation(() => {});
+        const pgError = Object.assign(new Error('invalid input syntax for type uuid: "abc"'), {
+            name: 'SequelizeDatabaseError',
+            parent: { code: '22P02' }
+        });
+
+        const res = await request(buildApp(() => { throw pgError; })).get('/x');
+
+        expect(res.status).toBe(400);
+        expect(res.body.error).toEqual({ statusCode: 400, code: 'INVALID_ID', message: 'Invalid identifier in the request' });
+        expect(console.error).not.toHaveBeenCalled();
+    });
+
     beforeEach(() => {
         jest.spyOn(console, 'error').mockImplementation(() => {});
     });
