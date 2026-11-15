@@ -34,6 +34,39 @@ const calculateOrderTotals = (items, shippingCost = 0, taxRate = 0.16) => {
     };
 };
 
+/**
+ * Why each cart line cannot be ordered right now, if any: the product is off
+ * sale, or there is not enough stock. Lines with a variant use the variant's
+ * stock; others use the product's inventory.
+ */
+const findStockProblems = (items) => {
+    const problems = [];
+    for (const item of items) {
+        const product = item.product;
+        if (product.status !== 'active') {
+            problems.push(`${product.name} is no longer available`);
+            continue;
+        }
+
+        const availableStock = item.variant
+            ? item.variant.stockQuantity
+            : product.inventory?.availableStock || 0;
+
+        if (availableStock < item.quantity) {
+            problems.push(`${product.name}: Only ${availableStock} in stock`);
+        }
+    }
+    return problems;
+};
+
+const stockError = (problems) =>
+    createError('Cart validation failed', 400, { code: 'INSUFFICIENT_STOCK', details: problems });
+
+/**
+ * Checks the cart can be ordered. It does not hold stock: placeOrder checks
+ * again and deducts stock in its own transaction, so an abandoned checkout
+ * never leaves stock reserved.
+ */
 const initiateCheckout = async (userId) => {
     const cart = await Cart.findOne({
         where: { userId },
@@ -58,38 +91,8 @@ const initiateCheckout = async (userId) => {
 
     if (!cart || cart.items.length === 0) throw createError('Cart is empty', 400);
 
-    const validationErrors = [];
-    for (const item of cart.items) {
-        const product = item.product;
-        const variant = item.variant;
-
-        if (product.status !== 'active') {
-            validationErrors.push(`${product.name} is no longer available`);
-            continue;
-        }
-
-        const availableStock = variant
-            ? variant.stockQuantity
-            : product.inventory?.availableStock || 0;
-
-        if (availableStock < item.quantity) {
-            validationErrors.push(`${product.name}: Only ${availableStock} in stock`);
-        }
-    }
-
-    if (validationErrors.length > 0) {
-        throw createError('Cart validation failed', 400, { code: 'INSUFFICIENT_STOCK', details: validationErrors });
-    }
-
-    for (const item of cart.items) {
-        const inventory = item.product.inventory;
-        if (inventory) {
-            await inventory.update({
-                availableStock: inventory.availableStock - item.quantity,
-                reservedStock: inventory.reservedStock + item.quantity
-            });
-        }
-    }
+    const problems = findStockProblems(cart.items);
+    if (problems.length > 0) throw stockError(problems);
 
     return { cartId: cart.id, itemCount: cart.items.length };
 };
@@ -171,6 +174,12 @@ const placeOrder = async (userId, { shippingAddressId, billingAddressId, payment
             throw createError('Cart is empty', 400);
         }
 
+        const problems = findStockProblems(cart.items);
+        if (problems.length > 0) {
+            await transaction.rollback();
+            throw stockError(problems);
+        }
+
         const orderNumber = await Order.generateOrderNumber();
         const shippingCost = 10.00;
 
@@ -218,10 +227,14 @@ const placeOrder = async (userId, { shippingAddressId, billingAddressId, payment
             const inventory = product.inventory;
             if (inventory) {
                 await inventory.update({
-                    reservedStock: inventory.reservedStock - item.quantity,
+                    availableStock: inventory.availableStock - item.quantity,
                     totalStock: inventory.totalStock - item.quantity,
                     lowStockAlert: (inventory.totalStock - item.quantity) <= product.lowStockThreshold
                 }, { transaction });
+            }
+
+            if (variant) {
+                await variant.decrement('stockQuantity', { by: item.quantity, transaction });
             }
 
             await product.increment('soldCount', { by: item.quantity, transaction });

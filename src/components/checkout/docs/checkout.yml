@@ -4,13 +4,14 @@ paths:
       tags: [Checkout]
       summary: Initiate checkout
       description: |
-        Validates the cart and temporarily reserves stock. Must be called before `place-order`.  
+        Checks the cart can be ordered: every product is on sale and in stock.
+        Holds no stock; `place-order` checks again and deducts stock in its own transaction.
         Returns an error with details if any items are unavailable or out of stock.
       security:
         - bearerAuth: []
       responses:
         '200':
-          description: Checkout initiated — stock reserved
+          description: Cart is ready for checkout
           content:
             application/json:
               schema:

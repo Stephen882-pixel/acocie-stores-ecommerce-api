@@ -5,7 +5,7 @@ const { sendSuccess } = require('../../../helpers/response.helper');
 
 const initiateCheckout = async (req, res) => {
     const result = await checkoutService.initiateCheckout(req.user.userId);
-    return sendSuccess(res, result, { message: 'Checkout initiated, inventory reserved' });
+    return sendSuccess(res, result, { message: 'Cart is ready for checkout' });
 };
 
 const getCheckoutSummary = async (req, res) => {
