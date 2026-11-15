@@ -243,6 +243,19 @@ describe('Cart routes', () => {
             expect(cartService.mergeCarts).not.toHaveBeenCalled();
         });
 
+        it('passes the guest session id to the service', async () => {
+            cartService.mergeCarts.mockResolvedValue({ merged: true });
+
+            const res = await request(app)
+                .post('/api/v1/cart/merge')
+                .set('Authorization', `Bearer ${token}`)
+                .send({ sessionId: 'session-1' });
+
+            expect(res.status).toBe(200);
+            expect(res.body.data).toEqual({ merged: true });
+            expect(cartService.mergeCarts).toHaveBeenCalledWith('user-1', 'session-1');
+        });
+
         it('returns 400 when the session id is missing', async () => {
             const res = await request(app)
                 .post('/api/v1/cart/merge')

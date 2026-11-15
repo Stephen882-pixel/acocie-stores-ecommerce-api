@@ -88,7 +88,7 @@ const getCart = async (userId, sessionId) => {
         if (variant) {
             availableStock = variant.stockQuantity;
         } else {
-            availableStock = product.Inventory?.availableStock || 0;
+            availableStock = product.inventory?.availableStock || 0;
         }
 
         const issues = [];

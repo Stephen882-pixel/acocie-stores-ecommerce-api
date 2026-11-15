@@ -36,7 +36,7 @@ const validateCart = async (req, res) => {
 };
 
 const mergeCarts = async (req, res) => {
-    const { merged } = await cartService.mergeCarts(req.user.userId, req.body.guestSessionId);
+    const { merged } = await cartService.mergeCarts(req.user.userId, req.body.sessionId);
     return sendSuccess(res, { merged }, {
         message: merged ? 'Carts merged successfully' : 'No guest cart to merge'
     });

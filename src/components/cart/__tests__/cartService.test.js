@@ -151,6 +151,18 @@ describe('cartService', () => {
             expect(cart.items[0].currentPrice).toBe('100.00');
         });
 
+        it('reads stock from the product inventory, flagging only a real shortage', async () => {
+            CartItem.findAll.mockResolvedValue([
+                makeCartItem({ quantity: 2 }),
+                makeCartItem({ id: 'item-2', quantity: 4, product: makeProduct({ inventory: { availableStock: 3 } }) })
+            ]);
+
+            const { items } = await cartService.getCart('user-1');
+
+            expect(items[0]).toMatchObject({ availableStock: 10, issues: [] });
+            expect(items[1]).toMatchObject({ availableStock: 3, issues: ['Insufficient stock'] });
+        });
+
         it('only reads items from the resolved cart', async () => {
             CartItem.findAll.mockResolvedValue([]);
 
