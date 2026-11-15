@@ -39,7 +39,9 @@ const getOrderHistory = async (userId, { page = 1, limit = 20, status, startDate
         ],
         limit: parseInt(limit),
         offset: parseInt(offset),
-        order: [['created_at', 'DESC']]
+        order: [['created_at', 'DESC']],
+        // Count orders, not order × item rows from the join.
+        distinct: true
     });
 
     return {
